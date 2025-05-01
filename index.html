@@ -10,7 +10,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             font-family: Arial, sans-serif;
             background-color: #f5f5f5;
@@ -20,10 +20,15 @@
             position: relative;
         }
         
-        #game-canvas {
-            background-color: white;
-            border: 1px solid #ddd;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        #player-selection {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        #player-selection select, #player-selection button {
+            padding: 8px 15px;
+            font-size: 16px;
+            margin: 0 5px;
         }
         
         #score-display {
@@ -35,26 +40,75 @@
             font-weight: bold;
         }
         
+        #game-canvas {
+            background-color: white;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
         #controls {
             margin-top: 20px;
             text-align: center;
             color: #666;
         }
+        
+        #leaderboard {
+            margin-top: 30px;
+            width: 600px;
+            border-collapse: collapse;
+        }
+        
+        #leaderboard th, #leaderboard td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        #leaderboard th {
+            background-color: #f2f2f2;
+        }
+        
+        #leaderboard tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
     </style>
 </head>
 <body>
-    <div id="score-display">
+    <div id="player-selection">
+        <select id="player-select">
+            <option value="">Select Player</option>
+            <option value="Ozi">Ozi</option>
+            <option value="Dim">Dim</option>
+            <option value="Sam">Sam</option>
+        </select>
+        <button id="start-game">Start Game</button>
+    </div>
+    
+    <div id="score-display" style="display: none;">
+        <div id="current-player">Player: </div>
         <div id="current-score">Score: 0</div>
         <div id="best-score">Best: 0</div>
     </div>
     
-    <div id="game-container">
+    <div id="game-container" style="display: none;">
         <canvas id="game-canvas" width="600" height="600"></canvas>
     </div>
     
-    <div id="controls">
+    <div id="controls" style="display: none;">
         Use arrow keys to control the snake
     </div>
+
+    <table id="leaderboard">
+        <thead>
+            <tr>
+                <th>Player</th>
+                <th>Best Score</th>
+            </tr>
+        </thead>
+        <tbody id="leaderboard-body">
+            <!-- Leaderboard will be populated here -->
+        </tbody>
+    </table>
 
     <script>
         // Constants
@@ -71,7 +125,7 @@
         let direction = [0, 0];
         let food = [0, 0];
         let score = 0;
-        let bestScore = 0;
+        let currentPlayer = "";
         let gameLoop;
         
         // DOM elements
@@ -79,17 +133,73 @@
         const ctx = canvas.getContext("2d");
         const currentScoreElement = document.getElementById("current-score");
         const bestScoreElement = document.getElementById("best-score");
+        const currentPlayerElement = document.getElementById("current-player");
+        const playerSelect = document.getElementById("player-select");
+        const startGameBtn = document.getElementById("start-game");
+        const scoreDisplay = document.getElementById("score-display");
+        const gameContainer = document.getElementById("game-container");
+        const controls = document.getElementById("controls");
+        const leaderboardBody = document.getElementById("leaderboard-body");
         
-        // Initialize game
+        // Initialize leaderboard from localStorage
+        let leaderboard = {
+            Ozi: localStorage.getItem("snakeBestScore_Ozi") || 0,
+            Dim: localStorage.getItem("snakeBestScore_Dim") || 0,
+            Sam: localStorage.getItem("snakeBestScore_Sam") || 0
+        };
+        
+        // Update leaderboard display
+        function updateLeaderboard() {
+            leaderboardBody.innerHTML = "";
+            
+            // Convert leaderboard to array and sort by score
+            const sortedLeaderboard = Object.entries(leaderboard)
+                .sort((a, b) => b[1] - a[1]);
+            
+            sortedLeaderboard.forEach(([player, bestScore]) => {
+                const row = document.createElement("tr");
+                const playerCell = document.createElement("td");
+                const scoreCell = document.createElement("td");
+                
+                playerCell.textContent = player;
+                scoreCell.textContent = bestScore;
+                
+                if (player === currentPlayer) {
+                    row.style.fontWeight = "bold";
+                }
+                
+                row.appendChild(playerCell);
+                row.appendChild(scoreCell);
+                leaderboardBody.appendChild(row);
+            });
+        }
+        
+        // Initialize game for selected player
         function initGame() {
-            // Load best score from localStorage
-            bestScore = localStorage.getItem("snakeBestScore") || 0;
+            currentPlayer = playerSelect.value;
+            if (!currentPlayer) return;
+            
+            // Show game elements
+            scoreDisplay.style.display = "flex";
+            gameContainer.style.display = "block";
+            controls.style.display = "block";
+            
+            // Set current player display
+            currentPlayerElement.textContent = `Player: ${currentPlayer}`;
+            
+            // Load best score for current player
+            const bestScore = leaderboard[currentPlayer] || 0;
             bestScoreElement.textContent = `Best: ${bestScore}`;
             
-            // Set initial food position
+            // Reset game state
+            snake = [[10, 10]];
+            direction = [0, 0];
+            score = 0;
+            currentScoreElement.textContent = `Score: ${score}`;
             food = randomFood();
             
             // Start game loop
+            if (gameLoop) clearInterval(gameLoop);
             gameLoop = setInterval(updateGame, 100);
             
             // Start listening for keyboard input
@@ -174,8 +284,9 @@
             // Draw scores on canvas (for better visibility)
             ctx.fillStyle = BLACK;
             ctx.font = "20px Arial";
-            ctx.fillText(`Score: ${score}`, 10, 25);
-            ctx.fillText(`Best: ${bestScore}`, canvas.width - 130, 25);
+            ctx.fillText(`Player: ${currentPlayer}`, 10, 25);
+            ctx.fillText(`Score: ${score}`, 10, 50);
+            ctx.fillText(`Best: ${leaderboard[currentPlayer] || 0}`, canvas.width - 130, 25);
         }
         
         // Check for collisions
@@ -188,10 +299,11 @@
             clearInterval(gameLoop);
             
             // Update best score if needed
-            if (score > bestScore) {
-                bestScore = score;
-                localStorage.setItem("snakeBestScore", bestScore);
-                bestScoreElement.textContent = `Best: ${bestScore}`;
+            if (score > leaderboard[currentPlayer]) {
+                leaderboard[currentPlayer] = score;
+                localStorage.setItem(`snakeBestScore_${currentPlayer}`, score);
+                bestScoreElement.textContent = `Best: ${score}`;
+                updateLeaderboard();
             }
             
             // Show game over message
@@ -200,28 +312,15 @@
             ctx.textAlign = "center";
             ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
             ctx.font = "20px Arial";
-            ctx.fillText("Press any key to restart", canvas.width / 2, canvas.height / 2 + 20);
+            ctx.fillText("Press Start Game to play again", canvas.width / 2, canvas.height / 2 + 20);
             ctx.textAlign = "start";
-            
-            // Set up restart listener
-            document.addEventListener("keydown", restartGame, { once: true });
         }
         
-        // Restart game
-        function restartGame() {
-            // Reset game state
-            snake = [[10, 10]];
-            direction = [0, 0];
-            score = 0;
-            currentScoreElement.textContent = `Score: ${score}`;
-            food = randomFood();
-            
-            // Restart game loop
-            gameLoop = setInterval(updateGame, 100);
-        }
+        // Event listeners
+        startGameBtn.addEventListener("click", initGame);
         
-        // Start the game
-        initGame();
+        // Initialize leaderboard
+        updateLeaderboard();
     </script>
 </body>
 </html>
