@@ -1,326 +1,314 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google-style Snake</title>
+    <title>Jeu de Démineur</title>
     <style>
         body {
+            font-family: Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 100vh;
+            background-color: #f0f0f0;
             margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
+            padding: 20px;
         }
         
-        #game-container {
-            position: relative;
-        }
-        
-        #player-selection {
+        h1 {
+            color: #333;
             margin-bottom: 20px;
-            text-align: center;
         }
         
-        #player-selection select, #player-selection button {
-            padding: 8px 15px;
-            font-size: 16px;
-            margin: 0 5px;
-        }
-        
-        #score-display {
+        .game-info {
             display: flex;
             justify-content: space-between;
-            width: 600px;
+            width: 300px;
             margin-bottom: 10px;
             font-size: 18px;
+        }
+        
+        .board {
+            display: grid;
+            grid-template-columns: repeat(10, 30px);
+            grid-template-rows: repeat(10, 30px);
+            gap: 2px;
+            margin-bottom: 20px;
+        }
+        
+        .cell {
+            width: 30px;
+            height: 30px;
+            background-color: #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            border: 2px outset #eee;
         }
         
-        #game-canvas {
-            background-color: white;
-            border: 1px solid #ddd;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        .cell.revealed {
+            background-color: #eee;
+            border: 1px solid #999;
         }
         
-        #controls {
+        .cell.mine {
+            background-color: #f00;
+            color: white;
+        }
+        
+        .cell.flagged {
+            background-color: #ff0;
+        }
+        
+        .controls {
             margin-top: 20px;
-            text-align: center;
-            color: #666;
         }
         
-        #leaderboard {
-            margin-top: 30px;
-            width: 600px;
-            border-collapse: collapse;
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
         }
         
-        #leaderboard th, #leaderboard td {
-            padding: 8px 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
+        button:hover {
+            background-color: #45a049;
         }
         
-        #leaderboard th {
-            background-color: #f2f2f2;
-        }
-        
-        #leaderboard tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
+        .color-1 { color: blue; }
+        .color-2 { color: green; }
+        .color-3 { color: red; }
+        .color-4 { color: darkblue; }
+        .color-5 { color: brown; }
+        .color-6 { color: teal; }
+        .color-7 { color: black; }
+        .color-8 { color: gray; }
     </style>
 </head>
 <body>
-    <div id="player-selection">
-        <select id="player-select">
-            <option value="">Select Player</option>
-            <option value="Ozi">Ozi</option>
-            <option value="Dim">Dim</option>
-            <option value="Sam">Sam</option>
-        </select>
-        <button id="start-game">Start Game</button>
+    <h1>Jeu de Démineur</h1>
+    
+    <div class="game-info">
+        <div>Mines: <span id="mines-count">10</span></div>
+        <div>Drapeaux: <span id="flags-count">0</span></div>
     </div>
     
-    <div id="score-display" style="display: none;">
-        <div id="current-player">Player: </div>
-        <div id="current-score">Score: 0</div>
-        <div id="best-score">Best: 0</div>
+    <div class="board" id="board"></div>
+    
+    <div class="controls">
+        <button id="reset-btn">Nouvelle partie</button>
     </div>
     
-    <div id="game-container" style="display: none;">
-        <canvas id="game-canvas" width="600" height="600"></canvas>
-    </div>
-    
-    <div id="controls" style="display: none;">
-        Use arrow keys to control the snake
-    </div>
-
-    <table id="leaderboard">
-        <thead>
-            <tr>
-                <th>Player</th>
-                <th>Best Score</th>
-            </tr>
-        </thead>
-        <tbody id="leaderboard-body">
-            <!-- Leaderboard will be populated here -->
-        </tbody>
-    </table>
-
     <script>
-        // Constants
-        const CELL_SIZE = 20;
-        const GRID_WIDTH = 600 / CELL_SIZE;
-        const GRID_HEIGHT = 600 / CELL_SIZE;
-        const WHITE = "#FFFFFF";
-        const GREEN = "#00C800";
-        const RED = "#FF0000";
-        const BLACK = "#000000";
-        
-        // Game state
-        let snake = [[10, 10]];
-        let direction = [0, 0];
-        let food = [0, 0];
-        let score = 0;
-        let currentPlayer = "";
-        let gameLoop;
-        
-        // DOM elements
-        const canvas = document.getElementById("game-canvas");
-        const ctx = canvas.getContext("2d");
-        const currentScoreElement = document.getElementById("current-score");
-        const bestScoreElement = document.getElementById("best-score");
-        const currentPlayerElement = document.getElementById("current-player");
-        const playerSelect = document.getElementById("player-select");
-        const startGameBtn = document.getElementById("start-game");
-        const scoreDisplay = document.getElementById("score-display");
-        const gameContainer = document.getElementById("game-container");
-        const controls = document.getElementById("controls");
-        const leaderboardBody = document.getElementById("leaderboard-body");
-        
-        // Initialize leaderboard from localStorage
-        let leaderboard = {
-            Ozi: localStorage.getItem("snakeBestScore_Ozi") || 0,
-            Dim: localStorage.getItem("snakeBestScore_Dim") || 0,
-            Sam: localStorage.getItem("snakeBestScore_Sam") || 0
-        };
-        
-        // Update leaderboard display
-        function updateLeaderboard() {
-            leaderboardBody.innerHTML = "";
+        document.addEventListener('DOMContentLoaded', () => {
+            const BOARD_SIZE = 10;
+            const MINES_COUNT = 10;
             
-            // Convert leaderboard to array and sort by score
-            const sortedLeaderboard = Object.entries(leaderboard)
-                .sort((a, b) => b[1] - a[1]);
+            const board = document.getElementById('board');
+            const minesCountDisplay = document.getElementById('mines-count');
+            const flagsCountDisplay = document.getElementById('flags-count');
+            const resetBtn = document.getElementById('reset-btn');
             
-            sortedLeaderboard.forEach(([player, bestScore]) => {
-                const row = document.createElement("tr");
-                const playerCell = document.createElement("td");
-                const scoreCell = document.createElement("td");
+            let gameBoard = [];
+            let revealedCount = 0;
+            let flaggedCount = 0;
+            let gameOver = false;
+            
+            // Initialiser le jeu
+            function initGame() {
+                board.innerHTML = '';
+                gameBoard = [];
+                revealedCount = 0;
+                flaggedCount = 0;
+                gameOver = false;
                 
-                playerCell.textContent = player;
-                scoreCell.textContent = bestScore;
+                minesCountDisplay.textContent = MINES_COUNT;
+                flagsCountDisplay.textContent = '0';
                 
-                if (player === currentPlayer) {
-                    row.style.fontWeight = "bold";
+                // Créer le tableau vide
+                for (let y = 0; y < BOARD_SIZE; y++) {
+                    gameBoard[y] = [];
+                    for (let x = 0; x < BOARD_SIZE; x++) {
+                        gameBoard[y][x] = {
+                            mine: false,
+                            revealed: false,
+                            flagged: false,
+                            adjacentMines: 0,
+                            element: null
+                        };
+                    }
                 }
                 
-                row.appendChild(playerCell);
-                row.appendChild(scoreCell);
-                leaderboardBody.appendChild(row);
-            });
-        }
-        
-        // Initialize game for selected player
-        function initGame() {
-            currentPlayer = playerSelect.value;
-            if (!currentPlayer) return;
-            
-            // Show game elements
-            scoreDisplay.style.display = "flex";
-            gameContainer.style.display = "block";
-            controls.style.display = "block";
-            
-            // Set current player display
-            currentPlayerElement.textContent = `Player: ${currentPlayer}`;
-            
-            // Load best score for current player
-            const bestScore = leaderboard[currentPlayer] || 0;
-            bestScoreElement.textContent = `Best: ${bestScore}`;
-            
-            // Reset game state
-            snake = [[10, 10]];
-            direction = [0, 0];
-            score = 0;
-            currentScoreElement.textContent = `Score: ${score}`;
-            food = randomFood();
-            
-            // Start game loop
-            if (gameLoop) clearInterval(gameLoop);
-            gameLoop = setInterval(updateGame, 100);
-            
-            // Start listening for keyboard input
-            document.addEventListener("keydown", handleKeyPress);
-        }
-        
-        // Generate random food position
-        function randomFood() {
-            return [
-                Math.floor(Math.random() * GRID_WIDTH),
-                Math.floor(Math.random() * GRID_HEIGHT)
-            ];
-        }
-        
-        // Draw a rectangle
-        function drawRect(pos, color) {
-            ctx.fillStyle = color;
-            ctx.fillRect(pos[0] * CELL_SIZE, pos[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-        }
-        
-        // Handle keyboard input
-        function handleKeyPress(e) {
-            switch(e.key) {
-                case "ArrowUp":
-                    if (direction[1] !== 1) direction = [0, -1];
-                    break;
-                case "ArrowDown":
-                    if (direction[1] !== -1) direction = [0, 1];
-                    break;
-                case "ArrowLeft":
-                    if (direction[0] !== 1) direction = [-1, 0];
-                    break;
-                case "ArrowRight":
-                    if (direction[0] !== -1) direction = [1, 0];
-                    break;
+                // Placer les mines aléatoirement
+                let minesPlaced = 0;
+                while (minesPlaced < MINES_COUNT) {
+                    const x = Math.floor(Math.random() * BOARD_SIZE);
+                    const y = Math.floor(Math.random() * BOARD_SIZE);
+                    
+                    if (!gameBoard[y][x].mine) {
+                        gameBoard[y][x].mine = true;
+                        minesPlaced++;
+                    }
+                }
+                
+                // Calculer le nombre de mines adjacentes pour chaque case
+                for (let y = 0; y < BOARD_SIZE; y++) {
+                    for (let x = 0; x < BOARD_SIZE; x++) {
+                        if (!gameBoard[y][x].mine) {
+                            gameBoard[y][x].adjacentMines = countAdjacentMines(x, y);
+                        }
+                    }
+                }
+                
+                // Créer les éléments HTML
+                for (let y = 0; y < BOARD_SIZE; y++) {
+                    for (let x = 0; x < BOARD_SIZE; x++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.x = x;
+                        cell.dataset.y = y;
+                        
+                        cell.addEventListener('click', () => handleCellClick(x, y));
+                        cell.addEventListener('contextmenu', (e) => {
+                            e.preventDefault();
+                            handleRightClick(x, y);
+                        });
+                        
+                        board.appendChild(cell);
+                        gameBoard[y][x].element = cell;
+                    }
+                }
             }
-        }
-        
-        // Update game state
-        function updateGame() {
-            // Clear canvas
-            ctx.fillStyle = WHITE;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Move snake if direction is set
-            if (direction[0] !== 0 || direction[1] !== 0) {
-                const newHead = [
-                    snake[0][0] + direction[0],
-                    snake[0][1] + direction[1]
-                ];
+            // Compter les mines adjacentes
+            function countAdjacentMines(x, y) {
+                let count = 0;
                 
-                // Check for collisions
-                if (
-                    isCollision(newHead, snake) ||
-                    newHead[0] < 0 || newHead[0] >= GRID_WIDTH ||
-                    newHead[1] < 0 || newHead[1] >= GRID_HEIGHT
-                ) {
-                    gameOver();
-                    return;
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        if (dx === 0 && dy === 0) continue;
+                        
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        
+                        if (nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE && gameBoard[ny][nx].mine) {
+                            count++;
+                        }
+                    }
                 }
                 
-                // Add new head
-                snake.unshift(newHead);
+                return count;
+            }
+            
+            // Gérer le clic gauche
+            function handleCellClick(x, y) {
+                if (gameOver || gameBoard[y][x].revealed || gameBoard[y][x].flagged) return;
                 
-                // Check if snake ate food
-                if (newHead[0] === food[0] && newHead[1] === food[1]) {
-                    score++;
-                    currentScoreElement.textContent = `Score: ${score}`;
-                    food = randomFood();
+                revealCell(x, y);
+                
+                if (gameBoard[y][x].mine) {
+                    // Game over - révéler toutes les mines
+                    gameOver = true;
+                    revealAllMines();
+                    alert('Game Over! Vous avez cliqué sur une mine.');
+                } else if (revealedCount === BOARD_SIZE * BOARD_SIZE - MINES_COUNT) {
+                    // Victoire
+                    gameOver = true;
+                    flagAllMines();
+                    alert('Félicitations! Vous avez gagné!');
+                }
+            }
+            
+            // Gérer le clic droit (drapeau)
+            function handleRightClick(x, y) {
+                if (gameOver || gameBoard[y][x].revealed) return;
+                
+                const cell = gameBoard[y][x];
+                
+                if (cell.flagged) {
+                    cell.flagged = false;
+                    cell.element.classList.remove('flagged');
+                    flaggedCount--;
                 } else {
-                    // Remove tail if no food was eaten
-                    snake.pop();
+                    cell.flagged = true;
+                    cell.element.classList.add('flagged');
+                    flaggedCount++;
+                }
+                
+                flagsCountDisplay.textContent = flaggedCount;
+            }
+            
+            // Révéler une case
+            function revealCell(x, y) {
+                const cell = gameBoard[y][x];
+                
+                if (cell.revealed || cell.flagged) return;
+                
+                cell.revealed = true;
+                cell.element.classList.add('revealed');
+                revealedCount++;
+                
+                if (cell.mine) {
+                    cell.element.classList.add('mine');
+                    cell.element.textContent = '💣';
+                } else if (cell.adjacentMines > 0) {
+                    cell.element.textContent = cell.adjacentMines;
+                    cell.element.classList.add(`color-${cell.adjacentMines}`);
+                } else {
+                    // Révéler les cases adjacentes si c'est une case vide
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dx = -1; dx <= 1; dx++) {
+                            if (dx === 0 && dy === 0) continue;
+                            
+                            const nx = x + dx;
+                            const ny = y + dy;
+                            
+                            if (nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE) {
+                                revealCell(nx, ny);
+                            }
+                        }
+                    }
                 }
             }
             
-            // Draw food
-            drawRect(food, RED);
-            
-            // Draw snake
-            snake.forEach(block => drawRect(block, GREEN));
-            
-            // Draw scores on canvas (for better visibility)
-            ctx.fillStyle = BLACK;
-            ctx.font = "20px Arial";
-            ctx.fillText(`Player: ${currentPlayer}`, 10, 25);
-            ctx.fillText(`Score: ${score}`, 10, 50);
-            ctx.fillText(`Best: ${leaderboard[currentPlayer] || 0}`, canvas.width - 130, 25);
-        }
-        
-        // Check for collisions
-        function isCollision(head, snakeBody) {
-            return snakeBody.some(block => block[0] === head[0] && block[1] === head[1]);
-        }
-        
-        // Handle game over
-        function gameOver() {
-            clearInterval(gameLoop);
-            
-            // Update best score if needed
-            if (score > leaderboard[currentPlayer]) {
-                leaderboard[currentPlayer] = score;
-                localStorage.setItem(`snakeBestScore_${currentPlayer}`, score);
-                bestScoreElement.textContent = `Best: ${score}`;
-                updateLeaderboard();
+            // Révéler toutes les mines (game over)
+            function revealAllMines() {
+                for (let y = 0; y < BOARD_SIZE; y++) {
+                    for (let x = 0; x < BOARD_SIZE; x++) {
+                        if (gameBoard[y][x].mine) {
+                            gameBoard[y][x].element.classList.add('revealed', 'mine');
+                            gameBoard[y][x].element.textContent = '💣';
+                        }
+                    }
+                }
             }
             
-            // Show game over message
-            ctx.fillStyle = BLACK;
-            ctx.font = "40px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 20);
-            ctx.font = "20px Arial";
-            ctx.fillText("Press Start Game to play again", canvas.width / 2, canvas.height / 2 + 20);
-            ctx.textAlign = "start";
-        }
-        
-        // Event listeners
-        startGameBtn.addEventListener("click", initGame);
-        
-        // Initialize leaderboard
-        updateLeaderboard();
+            // Marquer toutes les mines (victoire)
+            function flagAllMines() {
+                for (let y = 0; y < BOARD_SIZE; y++) {
+                    for (let x = 0; x < BOARD_SIZE; x++) {
+                        if (gameBoard[y][x].mine && !gameBoard[y][x].flagged) {
+                            gameBoard[y][x].flagged = true;
+                            gameBoard[y][x].element.classList.add('flagged');
+                        }
+                    }
+                }
+                flaggedCount = MINES_COUNT;
+                flagsCountDisplay.textContent = flaggedCount;
+            }
+            
+            // Nouvelle partie
+            resetBtn.addEventListener('click', initGame);
+            
+            // Démarrer le jeu
+            initGame();
+        });
     </script>
 </body>
 </html>
