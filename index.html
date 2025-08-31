@@ -3,11 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Text Corrector</title>
-  <link rel="stylesheet" href="style.css">
+  <title>DeepSeek Text Corrector</title>
+  <style>
+    body {
+      background-color: #2c3e50;
+      color: white;
+      font-family: 'Helvetica', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    select, textarea, button {
+      font-size: 16px;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: none;
+    }
+    textarea {
+      width: 80%;
+      min-height: 150px;
+      resize: vertical;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    #output {
+      width: 80%;
+      min-height: 150px;
+      background-color: #34495e;
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
+  </style>
 </head>
 <body>
-  <h1>AI Text Corrector</h1>
+  <h1>DeepSeek Text Corrector</h1>
 
   <label for="language">Choose language:</label>
   <select id="language">
@@ -20,7 +63,46 @@
 
   <div id="output"></div>
 
-  <script src="script.js"></script>
+  <script>
+    const correctBtn = document.getElementById('correctBtn');
+    const inputText = document.getElementById('inputText');
+    const output = document.getElementById('output');
+    const language = document.getElementById('language');
+
+    correctBtn.addEventListener('click', async () => {
+      const text = inputText.value.trim();
+      if (!text) {
+        alert('Please enter some text.');
+        return;
+      }
+
+      const lang = language.value;
+      const prompt = lang === 'EN'
+        ? `Correct the words in the text and do not say anything else: ${text}`
+        : `Corrige les mots dans le texte et ne dis rien d'autre: ${text}`;
+
+      output.textContent = 'Processing...';
+
+      try {
+        const response = await fetch('/api/correct', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          output.textContent = 'Error: ' + data.error;
+        } else {
+          output.textContent = data.choices[0].message.content;
+        }
+
+      } catch (error) {
+        output.textContent = 'Error: ' + error.message;
+      }
+    });
+  </script>
 </body>
 </html>
 
