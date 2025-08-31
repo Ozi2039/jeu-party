@@ -1,12 +1,15 @@
-// api/correct.js
+// netlify/functions/correct.js
 import fetch from "node-fetch";
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+export async function handler(event, context) {
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: "Method not allowed" }),
+    };
   }
 
-  const { prompt } = req.body;
+  const { prompt } = JSON.parse(event.body);
 
   try {
     const response = await fetch("https://api.openrouter.ai/v1/chat/completions", {
@@ -18,6 +21,23 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "deepseek/deepseek-r1:free",
         messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify(data)
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message })
+    };
+  }
+}
+     messages: [{ role: "user", content: prompt }]
       })
     });
 
