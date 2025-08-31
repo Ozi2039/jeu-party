@@ -1,314 +1,107 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jeu de Démineur</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: #f0f0f0;
-            margin: 0;
-            padding: 20px;
-        }
-        
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
-        }
-        
-        .game-info {
-            display: flex;
-            justify-content: space-between;
-            width: 300px;
-            margin-bottom: 10px;
-            font-size: 18px;
-        }
-        
-        .board {
-            display: grid;
-            grid-template-columns: repeat(10, 30px);
-            grid-template-rows: repeat(10, 30px);
-            gap: 2px;
-            margin-bottom: 20px;
-        }
-        
-        .cell {
-            width: 30px;
-            height: 30px;
-            background-color: #ccc;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            cursor: pointer;
-            user-select: none;
-            border: 2px outset #eee;
-        }
-        
-        .cell.revealed {
-            background-color: #eee;
-            border: 1px solid #999;
-        }
-        
-        .cell.mine {
-            background-color: #f00;
-            color: white;
-        }
-        
-        .cell.flagged {
-            background-color: #ff0;
-        }
-        
-        .controls {
-            margin-top: 20px;
-        }
-        
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-        }
-        
-        button:hover {
-            background-color: #45a049;
-        }
-        
-        .color-1 { color: blue; }
-        .color-2 { color: green; }
-        .color-3 { color: red; }
-        .color-4 { color: darkblue; }
-        .color-5 { color: brown; }
-        .color-6 { color: teal; }
-        .color-7 { color: black; }
-        .color-8 { color: gray; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeepSeek Text Corrector</title>
+  <style>
+    body {
+      background-color: #2c3e50;
+      color: white;
+      font-family: 'Helvetica', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    select, textarea, button {
+      font-size: 16px;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: none;
+    }
+    textarea {
+      width: 80%;
+      min-height: 150px;
+      resize: vertical;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    #output {
+      width: 80%;
+      min-height: 150px;
+      background-color: #34495e;
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
+  </style>
 </head>
 <body>
-    <h1>Jeu de Démineur</h1>
-    
-    <div class="game-info">
-        <div>Mines: <span id="mines-count">10</span></div>
-        <div>Drapeaux: <span id="flags-count">0</span></div>
-    </div>
-    
-    <div class="board" id="board"></div>
-    
-    <div class="controls">
-        <button id="reset-btn">Nouvelle partie</button>
-    </div>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const BOARD_SIZE = 10;
-            const MINES_COUNT = 10;
-            
-            const board = document.getElementById('board');
-            const minesCountDisplay = document.getElementById('mines-count');
-            const flagsCountDisplay = document.getElementById('flags-count');
-            const resetBtn = document.getElementById('reset-btn');
-            
-            let gameBoard = [];
-            let revealedCount = 0;
-            let flaggedCount = 0;
-            let gameOver = false;
-            
-            // Initialiser le jeu
-            function initGame() {
-                board.innerHTML = '';
-                gameBoard = [];
-                revealedCount = 0;
-                flaggedCount = 0;
-                gameOver = false;
-                
-                minesCountDisplay.textContent = MINES_COUNT;
-                flagsCountDisplay.textContent = '0';
-                
-                // Créer le tableau vide
-                for (let y = 0; y < BOARD_SIZE; y++) {
-                    gameBoard[y] = [];
-                    for (let x = 0; x < BOARD_SIZE; x++) {
-                        gameBoard[y][x] = {
-                            mine: false,
-                            revealed: false,
-                            flagged: false,
-                            adjacentMines: 0,
-                            element: null
-                        };
-                    }
-                }
-                
-                // Placer les mines aléatoirement
-                let minesPlaced = 0;
-                while (minesPlaced < MINES_COUNT) {
-                    const x = Math.floor(Math.random() * BOARD_SIZE);
-                    const y = Math.floor(Math.random() * BOARD_SIZE);
-                    
-                    if (!gameBoard[y][x].mine) {
-                        gameBoard[y][x].mine = true;
-                        minesPlaced++;
-                    }
-                }
-                
-                // Calculer le nombre de mines adjacentes pour chaque case
-                for (let y = 0; y < BOARD_SIZE; y++) {
-                    for (let x = 0; x < BOARD_SIZE; x++) {
-                        if (!gameBoard[y][x].mine) {
-                            gameBoard[y][x].adjacentMines = countAdjacentMines(x, y);
-                        }
-                    }
-                }
-                
-                // Créer les éléments HTML
-                for (let y = 0; y < BOARD_SIZE; y++) {
-                    for (let x = 0; x < BOARD_SIZE; x++) {
-                        const cell = document.createElement('div');
-                        cell.className = 'cell';
-                        cell.dataset.x = x;
-                        cell.dataset.y = y;
-                        
-                        cell.addEventListener('click', () => handleCellClick(x, y));
-                        cell.addEventListener('contextmenu', (e) => {
-                            e.preventDefault();
-                            handleRightClick(x, y);
-                        });
-                        
-                        board.appendChild(cell);
-                        gameBoard[y][x].element = cell;
-                    }
-                }
-            }
-            
-            // Compter les mines adjacentes
-            function countAdjacentMines(x, y) {
-                let count = 0;
-                
-                for (let dy = -1; dy <= 1; dy++) {
-                    for (let dx = -1; dx <= 1; dx++) {
-                        if (dx === 0 && dy === 0) continue;
-                        
-                        const nx = x + dx;
-                        const ny = y + dy;
-                        
-                        if (nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE && gameBoard[ny][nx].mine) {
-                            count++;
-                        }
-                    }
-                }
-                
-                return count;
-            }
-            
-            // Gérer le clic gauche
-            function handleCellClick(x, y) {
-                if (gameOver || gameBoard[y][x].revealed || gameBoard[y][x].flagged) return;
-                
-                revealCell(x, y);
-                
-                if (gameBoard[y][x].mine) {
-                    // Game over - révéler toutes les mines
-                    gameOver = true;
-                    revealAllMines();
-                    alert('Game Over! Vous avez cliqué sur une mine.');
-                } else if (revealedCount === BOARD_SIZE * BOARD_SIZE - MINES_COUNT) {
-                    // Victoire
-                    gameOver = true;
-                    flagAllMines();
-                    alert('Félicitations! Vous avez gagné!');
-                }
-            }
-            
-            // Gérer le clic droit (drapeau)
-            function handleRightClick(x, y) {
-                if (gameOver || gameBoard[y][x].revealed) return;
-                
-                const cell = gameBoard[y][x];
-                
-                if (cell.flagged) {
-                    cell.flagged = false;
-                    cell.element.classList.remove('flagged');
-                    flaggedCount--;
-                } else {
-                    cell.flagged = true;
-                    cell.element.classList.add('flagged');
-                    flaggedCount++;
-                }
-                
-                flagsCountDisplay.textContent = flaggedCount;
-            }
-            
-            // Révéler une case
-            function revealCell(x, y) {
-                const cell = gameBoard[y][x];
-                
-                if (cell.revealed || cell.flagged) return;
-                
-                cell.revealed = true;
-                cell.element.classList.add('revealed');
-                revealedCount++;
-                
-                if (cell.mine) {
-                    cell.element.classList.add('mine');
-                    cell.element.textContent = '💣';
-                } else if (cell.adjacentMines > 0) {
-                    cell.element.textContent = cell.adjacentMines;
-                    cell.element.classList.add(`color-${cell.adjacentMines}`);
-                } else {
-                    // Révéler les cases adjacentes si c'est une case vide
-                    for (let dy = -1; dy <= 1; dy++) {
-                        for (let dx = -1; dx <= 1; dx++) {
-                            if (dx === 0 && dy === 0) continue;
-                            
-                            const nx = x + dx;
-                            const ny = y + dy;
-                            
-                            if (nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE) {
-                                revealCell(nx, ny);
-                            }
-                        }
-                    }
-                }
-            }
-            
-            // Révéler toutes les mines (game over)
-            function revealAllMines() {
-                for (let y = 0; y < BOARD_SIZE; y++) {
-                    for (let x = 0; x < BOARD_SIZE; x++) {
-                        if (gameBoard[y][x].mine) {
-                            gameBoard[y][x].element.classList.add('revealed', 'mine');
-                            gameBoard[y][x].element.textContent = '💣';
-                        }
-                    }
-                }
-            }
-            
-            // Marquer toutes les mines (victoire)
-            function flagAllMines() {
-                for (let y = 0; y < BOARD_SIZE; y++) {
-                    for (let x = 0; x < BOARD_SIZE; x++) {
-                        if (gameBoard[y][x].mine && !gameBoard[y][x].flagged) {
-                            gameBoard[y][x].flagged = true;
-                            gameBoard[y][x].element.classList.add('flagged');
-                        }
-                    }
-                }
-                flaggedCount = MINES_COUNT;
-                flagsCountDisplay.textContent = flaggedCount;
-            }
-            
-            // Nouvelle partie
-            resetBtn.addEventListener('click', initGame);
-            
-            // Démarrer le jeu
-            initGame();
+  <h1>DeepSeek Text Corrector</h1>
+
+  <label for="language">Choose language:</label>
+  <select id="language">
+    <option value="EN">English</option>
+    <option value="FR">French</option>
+  </select>
+
+  <textarea id="inputText" placeholder="Type your text here..."></textarea>
+  <button id="correctBtn">Correct Text</button>
+
+  <div id="output"></div>
+
+  <script>
+    const correctBtn = document.getElementById('correctBtn');
+    const inputText = document.getElementById('inputText');
+    const output = document.getElementById('output');
+    const language = document.getElementById('language');
+
+    correctBtn.addEventListener('click', async () => {
+      const text = inputText.value.trim();
+      if (!text) {
+        alert('Please enter some text.');
+        return;
+      }
+
+      const lang = language.value;
+      const prompt = lang === 'EN' 
+        ? `Correct the words in the text and do not say anything else: ${text}` 
+        : `Corrige les mots dans le texte et ne dis rien d'autre: ${text}`;
+
+      output.textContent = 'Processing...';
+
+      try {
+        const response = await fetch('https://api.openrouter.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer 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'
+          },
+          body: JSON.stringify({
+            model: "deepseek/deepseek-r1:free",
+            messages: [{ role: "user", content: prompt }]
+          })
         });
-    </script>
+
+        const data = await response.json();
+        output.textContent = data.choices[0].message.content;
+      } catch (error) {
+        output.textContent = 'Error: ' + error.message;
+      }
+    });
+  </script>
 </body>
 </html>
