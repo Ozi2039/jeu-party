@@ -60,16 +60,15 @@
   <div id="output"></div>
 
   <script>
-    // Decoder function: shifts every char code back by -1
+    // Decode scrambled key
     function decodeKey(encoded) {
       return encoded.split('')
         .map(c => String.fromCharCode(c.charCodeAt(0) - 1))
         .join('');
     }
 
-    // Put your scrambled key here (shift each character +1 manually or with a quick script)
-    // Example: "sk-or-v1-6d..." → becomes "tl.ps.w2.7e..."
-    const encodedKey = "tl.ps.w2.7eee2:g2386c2dbdb9dc2fcb8c22ee45244b3722gd5:fb4cg1e:7d51g16dd264"; // replace with your shifted key
+    // Replace this with your scrambled key from Python tool
+    const encodedKey = "tl.ps.w2.7eee2:g2386c2dbdb9dc2fcb8c22ee45244b3722gd5:fb4cg1e:7d51g16dd264";
     const apiKey = decodeKey(encodedKey);
 
     const correctBtn = document.getElementById('correctBtn');
@@ -92,17 +91,20 @@
       output.textContent = 'Processing...';
 
       try {
-        const response = await fetch('https://api.openrouter.ai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          },
-          body: JSON.stringify({
-            model: "deepseek/deepseek-r1:free",
-            messages: [{ role: "user", content: prompt }]
-          })
-        });
+        const response = await fetch(
+          'https://corsproxy.io/?https://api.openrouter.ai/v1/chat/completions', 
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: "deepseek/deepseek-r1:free",
+              messages: [{ role: "user", content: prompt }]
+            })
+          }
+        );
 
         const data = await response.json();
         output.textContent = data.choices[0].message.content;
