@@ -1,14 +1,11 @@
-import express from "express";
+// api/correct.js
 import fetch from "node-fetch";
-import cors from "cors";
-import dotenv from "dotenv";
 
-dotenv.config();
-const app = express();
-app.use(cors());
-app.use(express.json());
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-app.post("/correct", async (req, res) => {
   const { prompt } = req.body;
 
   try {
@@ -16,7 +13,7 @@ app.post("/correct", async (req, res) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+        "Authorization": `Bearer ${process.env.OPENROUTER_KEY}`
       },
       body: JSON.stringify({
         model: "deepseek/deepseek-r1:free",
@@ -25,10 +22,9 @@ app.post("/correct", async (req, res) => {
     });
 
     const data = await response.json();
-    res.json(data);
+    res.status(200).json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-});
+}
 
-app.listen(3000, () => console.log("Server running on http://localhost:3000"));
