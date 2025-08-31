@@ -14,9 +14,7 @@
       align-items: center;
       padding: 30px;
     }
-    h1 {
-      margin-bottom: 20px;
-    }
+    h1 { margin-bottom: 20px; }
     select, textarea, button {
       font-size: 16px;
       padding: 10px;
@@ -24,20 +22,9 @@
       border-radius: 8px;
       border: none;
     }
-    textarea {
-      width: 80%;
-      min-height: 150px;
-      resize: vertical;
-    }
-    button {
-      background-color: #3498db;
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    button:hover {
-      background-color: #2980b9;
-    }
+    textarea { width: 80%; min-height: 150px; resize: vertical; }
+    button { background-color: #3498db; color: white; cursor: pointer; transition: background-color 0.3s; }
+    button:hover { background-color: #2980b9; }
     #output {
       width: 80%;
       min-height: 150px;
@@ -71,33 +58,19 @@
 
     correctBtn.addEventListener('click', async () => {
       const text = inputText.value.trim();
-      if (!text) {
-        alert('Please enter some text.');
-        return;
-      }
+      if (!text) return alert('Please enter some text.');
 
       const lang = language.value;
-      const prompt = lang === 'EN'
-        ? `Correct the words in the text and do not say anything else: ${text}`
-        : `Corrige les mots dans le texte et ne dis rien d'autre: ${text}`;
-
       output.textContent = 'Processing...';
 
       try {
-        const response = await fetch('/api/correct', {
+        const response = await fetch('/correct-text', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt })
+          body: JSON.stringify({ text, language: lang })
         });
-
         const data = await response.json();
-
-        if (data.error) {
-          output.textContent = 'Error: ' + data.error;
-        } else {
-          output.textContent = data.choices[0].message.content;
-        }
-
+        output.textContent = data.choices[0].message.content;
       } catch (error) {
         output.textContent = 'Error: ' + error.message;
       }
@@ -105,4 +78,3 @@
   </script>
 </body>
 </html>
-
