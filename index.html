@@ -15,15 +15,17 @@
       padding: 30px;
     }
     h1 { margin-bottom: 20px; }
-    select, textarea, button {
+    label, select, textarea, input, button {
       font-size: 16px;
       padding: 10px;
       margin: 10px 0;
       border-radius: 8px;
       border: none;
     }
-    textarea {
+    textarea, input {
       width: 80%;
+    }
+    textarea {
       min-height: 150px;
       resize: vertical;
     }
@@ -48,6 +50,9 @@
 <body>
   <h1>AI Text Corrector</h1>
 
+  <label for="userKey">Enter your OpenRouter API key:</label>
+  <input type="text" id="userKey" placeholder="sk-or-...">
+
   <label for="language">Choose language:</label>
   <select id="language">
     <option value="EN">English</option>
@@ -60,23 +65,19 @@
   <div id="output"></div>
 
   <script>
-    // Decode scrambled key
-    function decodeKey(encoded) {
-      return encoded.split('')
-        .map(c => String.fromCharCode(c.charCodeAt(0) - 1))
-        .join('');
-    }
-
-    // Replace this with your scrambled key from Python tool
-    const encodedKey = "tl.ps.w2.7eee2:g2386c2dbdb9dc2fcb8c22ee45244b3722gd5:fb4cg1e:7d51g16dd264";
-    const apiKey = decodeKey(encodedKey);
-
     const correctBtn = document.getElementById('correctBtn');
     const inputText = document.getElementById('inputText');
     const output = document.getElementById('output');
     const language = document.getElementById('language');
+    const userKeyInput = document.getElementById('userKey');
 
     correctBtn.addEventListener('click', async () => {
+      const apiKey = userKeyInput.value.trim();
+      if (!apiKey) {
+        alert('Please enter your API key.');
+        return;
+      }
+
       const text = inputText.value.trim();
       if (!text) {
         alert('Please enter some text.');
@@ -84,8 +85,8 @@
       }
 
       const lang = language.value;
-      const prompt = lang === 'EN' 
-        ? `Correct the words in the text and do not say anything else: ${text}` 
+      const prompt = lang === 'EN'
+        ? `Correct the words in the text and do not say anything else: ${text}`
         : `Corrige les mots dans le texte et ne dis rien d'autre: ${text}`;
 
       output.textContent = 'Processing...';
@@ -106,15 +107,12 @@
           }
         );
 
-        // Get raw text first
         const textResponse = await proxyResponse.text();
         let data;
 
         try {
-          // Try normal parse
           data = JSON.parse(textResponse);
         } catch {
-          // If fails, it may be wrapped in 'contents'
           const wrapped = JSON.parse(textResponse);
           data = JSON.parse(wrapped.contents);
         }
@@ -128,3 +126,4 @@
   </script>
 </body>
 </html>
+
