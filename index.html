@@ -1,129 +1,277 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Text Corrector</title>
-  <style>
-    body {
-      background-color: #2c3e50;
-      color: white;
-      font-family: 'Helvetica', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 30px;
-    }
-    h1 { margin-bottom: 20px; }
-    label, select, textarea, input, button {
-      font-size: 16px;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: none;
-    }
-    textarea, input {
-      width: 80%;
-    }
-    textarea {
-      min-height: 150px;
-      resize: vertical;
-    }
-    button {
-      background-color: #3498db;
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    button:hover { background-color: #2980b9; }
-    #output {
-      width: 80%;
-      min-height: 150px;
-      background-color: #34495e;
-      color: white;
-      padding: 10px;
-      border-radius: 8px;
-      white-space: pre-wrap;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultra Modern Multi-List To-Do</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+:root{--bg:#f0f2f5;--card-bg:#fff;--text-color:#333;--accent:#f97316;--completed:#a3a3a3;--shadow:rgba(0,0,0,0.1);}
+[data-theme="dark"]{--bg:#181818;--card-bg:#1f1f1f;--text-color:#f5f5f5;--accent:#ea580c;--completed:#555;--shadow:rgba(0,0,0,0.5);}
+*{box-sizing:border-box;font-family:'Inter',sans-serif;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text-color);min-height:100vh;display:flex;flex-direction:column;padding:20px;transition:background 0.3s,color 0.3s;}
+.theme-toggle{position:absolute;top:20px;right:20px;background:var(--accent);color:white;border:none;padding:10px 15px;border-radius:50px;cursor:pointer;font-weight:600;transition:background 0.3s;}
+.theme-toggle:hover{background:#c2410c;}
+.lists-header{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;align-items:center;}
+.lists-header button{background:var(--accent);color:white;border:none;padding:8px 12px;border-radius:50px;cursor:pointer;font-weight:600;transition:background 0.3s;}
+.lists-header button.active{background:#c2410c;}
+.add-list-input{display:flex;gap:10px;}
+.add-list-input input{padding:8px 12px;border-radius:50px;border:1px solid #ccc;outline:none;}
+.lists-container{display:flex;gap:20px;flex-wrap:wrap;}
+.list-card{background:var(--card-bg);padding:20px;border-radius:20px;box-shadow:0 10px 20px var(--shadow);flex:1 1 300px;display:flex;flex-direction:column;min-width:300px;max-width:500px;position:relative;}
+.list-card h2{margin-bottom:15px;color:var(--accent);font-size:1.5em;}
+.new-task{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;}
+.new-task input, .new-task select, .new-task textarea{flex:1;min-width:100px;padding:10px 15px;border-radius:10px;border:1px solid #ccc;outline:none;transition:border 0.3s;}
+.new-task textarea{white-space:pre-wrap;min-height:80px;resize:vertical;}
+.new-task input:focus,.new-task select:focus,.new-task textarea:focus{border-color:var(--accent);}
+.new-task button{background:var(--accent);color:white;border:none;padding:10px 15px;border-radius:10px;cursor:pointer;transition:background 0.3s;}
+.new-task button:hover{background:#c2410c;}
+.recurrence-options{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:5px;background:#f3f3f3;padding:10px;border-radius:10px;}
+.weekdays{display:flex;gap:5px;flex-wrap:wrap;}
+.weekdays label{display:flex;align-items:center;gap:3px;}
+ul.task-list{list-style:none;padding-left:0;}
+ul.task-list li{background:var(--bg);margin-bottom:12px;padding:12px 18px;border-radius:15px;display:flex;align-items:flex-start;justify-content:space-between;box-shadow:0 5px 15px var(--shadow);transition:transform 0.2s;cursor:grab;}
+.task-info{display:flex;flex-direction:column;max-width:calc(100% - 90px);}
+.task-info span{font-weight:500;}
+.task-info .date,.task-info .recurrence,.task-info .description{font-size:0.8em;color:var(--completed);white-space:pre-wrap;}
+.check-btn,.edit-btn{width:25px;height:25px;border-radius:50%;border:2px solid var(--accent);background:none;cursor:pointer;display:flex;justify-content:center;align-items:center;transition:all 0.3s;font-weight:bold;font-size:1.1em;margin-left:5px;}
+.edit-btn{border-color:#f59e0b;color:#f59e0b;}
+.separator{border-top:2px dashed #ccc;margin:15px 0;}
+.today-header{margin-top:0;margin-bottom:10px;color:#f97316;font-size:1.2em;}
+</style>
 </head>
-<body>
-  <h1>AI Text Corrector</h1>
+<body data-theme="light">
 
-  <label for="userKey">Enter your OpenRouter API key:</label>
-  <input type="text" id="userKey" placeholder="sk-or-...">
+<button class="theme-toggle">Dark Mode</button>
 
-  <label for="language">Choose language:</label>
-  <select id="language">
-    <option value="EN">English</option>
-    <option value="FR">French</option>
-  </select>
+<div class="lists-header" id="lists-header">
+  <div class="add-list-input">
+    <input type="text" id="new-list-name" placeholder="New section name">
+    <button id="add-list-btn">Add Section</button>
+  </div>
+</div>
 
-  <textarea id="inputText" placeholder="Type your text here..."></textarea>
-  <button id="correctBtn">Correct Text</button>
+<div class="lists-container" id="lists-container"></div>
 
-  <div id="output"></div>
+<script>
+const themeToggle=document.querySelector('.theme-toggle');
+themeToggle.addEventListener('click',()=>{
+  if(document.body.getAttribute('data-theme')==='light'){
+    document.body.setAttribute('data-theme','dark');themeToggle.textContent='Light Mode';
+  }else{
+    document.body.setAttribute('data-theme','light');themeToggle.textContent='Dark Mode';
+  }
+});
 
-  <script>
-    const correctBtn = document.getElementById('correctBtn');
-    const inputText = document.getElementById('inputText');
-    const output = document.getElementById('output');
-    const language = document.getElementById('language');
-    const userKeyInput = document.getElementById('userKey');
+// Load lists from localStorage or default
+let lists=JSON.parse(localStorage.getItem('todoLists')) || {'Dashboard':[],'Main':[],'Side Quest':[]};
+let currentList='Main';
+const listsHeader=document.getElementById('lists-header');
+const listsContainer=document.getElementById('lists-container');
 
-    correctBtn.addEventListener('click', async () => {
-      const apiKey = userKeyInput.value.trim();
-      if (!apiKey) {
-        alert('Please enter your API key.');
-        return;
+function saveLists(){localStorage.setItem('todoLists',JSON.stringify(lists));}
+
+function sortTasksByDate(tasks){return tasks.sort((a,b)=>{if(!a.date)return 1;if(!b.date)return -1;return new Date(a.date)-new Date(b.date);});}
+
+function occursToday(task){
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split('T')[0];
+  if(task.date === today) return true;
+  if(task.recurrence){
+    const start = new Date(task.date);
+    const end = new Date(task.recurrence.endDate);
+    if(now > end) return false;
+    if(task.recurrence.type === 'daily') return true;
+    if(task.recurrence.type === 'weekly') return task.recurrence.days.includes(now.getDay());
+    if(task.recurrence.type === 'monthly') return now.getDate() === start.getDate();
+  }
+  return false;
+}
+
+function getNextDate(task){
+  const current=new Date(task.date);
+  let next=new Date(current);
+  if(task.recurrence.type==='daily') next.setDate(next.getDate()+1);
+  if(task.recurrence.type==='weekly'){
+    const today=current.getDay();
+    const days=task.recurrence.days.slice().sort((a,b)=>a-b);
+    let nxt=days.find(d=>d>today); if(nxt===undefined) nxt=days[0]; let diff=(nxt-today); if(diff<=0) diff+=7; next.setDate(next.getDate()+diff);
+  }
+  if(task.recurrence.type==='monthly') next.setMonth(next.getMonth()+1);
+  return next.toISOString().split('T')[0];
+}
+
+function editTask(task){
+  const newText=prompt('Edit task name',task.text);
+  if(newText!==null) task.text=newText.trim()||task.text;
+  if(currentList!=='Side Quest'){
+    const newDate=prompt('Edit date (YYYY-MM-DD)',task.date);
+    if(newDate!==null && !isNaN(new Date(newDate))) task.date=newDate;
+    if(task.recurrence){
+      const newType=prompt('Recurrence type (daily,weekly,monthly) or empty for none',task.recurrence.type);
+      if(newType==='daily'||newType==='weekly'||newType==='monthly') task.recurrence.type=newType;
+      const newEnd=prompt('Recurrence until date (YYYY-MM-DD)',task.recurrence.endDate);
+      if(newEnd!==null && !isNaN(new Date(newEnd))) task.recurrence.endDate=newEnd;
+      if(task.recurrence.type==='weekly'){
+        const days=prompt('Enter weekdays numbers separated by comma (0=Sun,...6=Sat)',task.recurrence.days.join(','));
+        if(days!==null) task.recurrence.days=days.split(',').map(d=>parseInt(d.trim())).filter(d=>!isNaN(d)&&d>=0&&d<=6);
       }
+    }
+  } else {
+    const newDesc=prompt('Edit description',task.description||'');
+    if(newDesc!==null) task.description=newDesc;
+  }
+  saveLists();
+}
 
-      const text = inputText.value.trim();
-      if (!text) {
-        alert('Please enter some text.');
-        return;
-      }
+function handleCheck(listKey,index){
+  const task=lists[listKey][index];
+  if(listKey==='Side Quest'){
+    lists[listKey].splice(index,1);
+  } else {
+    if(task.recurrence){
+      const next=getNextDate(task);
+      if(new Date(next)<=new Date(task.recurrence.endDate)) task.date=next;
+      else lists[listKey].splice(index,1);
+    }else lists[listKey].splice(index,1);
+  }
+  saveLists();
+  renderLists();
+}
 
-      const lang = language.value;
-      const prompt = lang === 'EN'
-        ? `Correct the words in the text and do not say anything else: ${text}`
-        : `Corrige les mots dans le texte et ne dis rien d'autre: ${text}`;
+function renderLists(){
+  listsContainer.innerHTML='';
+  Object.keys(lists).forEach(listName=>{
+    const card=document.createElement('div'); card.classList.add('list-card');
+    card.style.display=(listName==='Dashboard' || listName==='Side Quest' || currentList===listName)?'flex':'none';
+    const h2=document.createElement('h2'); h2.textContent=listName; card.appendChild(h2);
 
-      output.textContent = 'Processing...';
-
-      try {
-        const proxyResponse = await fetch(
-          'https://corsproxy.io/?https://api.openrouter.ai/v1/chat/completions',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-              model: "deepseek/deepseek-r1:free",
-              messages: [{ role: "user", content: prompt }]
-            })
+    // New Task Input
+    const newTaskDiv=document.createElement('div'); newTaskDiv.classList.add('new-task');
+    if(listName==='Side Quest'){
+      newTaskDiv.innerHTML=`<input type="text" placeholder="Task name"><textarea placeholder="Description (optional)"></textarea><button>Add</button>`;
+      newTaskDiv.querySelector('button').addEventListener('click',()=>{
+        const text=newTaskDiv.querySelector('input[type=text]').value.trim();
+        const desc=newTaskDiv.querySelector('textarea').value.trim();
+        if(!text) return;
+        lists[listName].push({text,description:desc});
+        newTaskDiv.querySelectorAll('input,textarea').forEach(inp=>inp.value='');
+        saveLists();
+        renderLists();
+      });
+      card.appendChild(newTaskDiv);
+    } else if(listName!=='Dashboard'){
+      newTaskDiv.innerHTML=`<input type="text" placeholder="Task name"><input type="date"><select class="repeat-select">
+        <option value="">No Repeat</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select>
+        <div class="recurrence-options">
+          <label>Until: <input type="date" class="end-date"></label>
+          <div class="weekdays">
+            <label><input type="checkbox" value="0">Sun</label><label><input type="checkbox" value="1">Mon</label><label><input type="checkbox" value="2">Tue</label><label><input type="checkbox" value="3">Wed</label><label><input type="checkbox" value="4">Thu</label><label><input type="checkbox" value="5">Fri</label><label><input type="checkbox" value="6">Sat</label>
+          </div>
+        </div>
+        <button>Add</button>`;
+      const repeatSelect=newTaskDiv.querySelector('.repeat-select');
+      const recOptions=newTaskDiv.querySelector('.recurrence-options');
+      recOptions.style.display='none'; recOptions.querySelector('.weekdays').style.display='none';
+      repeatSelect.addEventListener('change',()=>{recOptions.style.display=repeatSelect.value?'flex':'none'; recOptions.querySelector('.weekdays').style.display=repeatSelect.value==='weekly'?'flex':'none';});
+      newTaskDiv.querySelector('button').addEventListener('click',()=>{
+        const text=newTaskDiv.querySelector('input[type=text]').value.trim();
+        const date=newTaskDiv.querySelector('input[type=date]').value;
+        if(!text) return;
+        const repeat=repeatSelect.value;
+        const task={text,date};
+        if(repeat){
+          const endDate=newTaskDiv.querySelector('.end-date').value;
+          task.recurrence={type:repeat,endDate};
+          if(repeat==='weekly'){
+            const days=[...newTaskDiv.querySelectorAll('.weekdays input:checked')].map(inp=>parseInt(inp.value));
+            task.recurrence.days=days;
           }
-        );
-
-        const textResponse = await proxyResponse.text();
-        let data;
-
-        try {
-          data = JSON.parse(textResponse);
-        } catch {
-          const wrapped = JSON.parse(textResponse);
-          data = JSON.parse(wrapped.contents);
         }
+        lists[listName].push(task);
+        newTaskDiv.querySelectorAll('input').forEach(inp=>inp.value=''); repeatSelect.value=''; recOptions.style.display='none';
+        saveLists();
+        renderLists();
+      });
+      card.appendChild(newTaskDiv);
+    }
 
-        output.textContent = data.choices[0].message.content;
+    // Dashboard Today Section
+    if(listName==='Dashboard'){
+      const todayHeader=document.createElement('div'); todayHeader.textContent='Today'; todayHeader.classList.add('today-header'); card.appendChild(todayHeader);
+      const todayList=document.createElement('ul'); todayList.classList.add('task-list');
+      Object.entries(lists).forEach(([key,arr])=>{
+        if(key==='Dashboard'||key==='Side Quest') return;
+        arr.forEach((task,index)=>{
+          if(occursToday(task)){
+            const li=document.createElement('li');
+            li.innerHTML=`<div class="task-info"><span>${task.text} (${key})</span>${task.date?'<span class="date">'+task.date+'</span>':''}${task.recurrence?'<span class="recurrence">Repeat: '+task.recurrence.type+'</span>':''}</div>
+            <div style="display:flex;"><button class="check-btn">&#10003;</button><button class="edit-btn">&#9998;</button></div>`;
+            li.querySelector('.check-btn').addEventListener('click',()=>handleCheck(key,index));
+            li.querySelector('.edit-btn').addEventListener('click',()=>{editTask(task); renderLists();});
+            todayList.appendChild(li);
+          }
+        });
+      });
+      card.appendChild(todayList);
+      card.appendChild(document.createElement('div')).classList.add('separator');
+    }
 
-      } catch (error) {
-        output.textContent = 'Error: ' + error.message;
+    // Task List Rendering
+    const ul=document.createElement('ul'); ul.classList.add('task-list');
+    const tasksToShow=listName==='Dashboard'?Object.entries(lists).filter(([k])=>k!=='Dashboard' && k!=='Side Quest').flatMap(([k,arr])=>arr.map((t,i)=>({...t,list:k,index:i}))):lists[listName].map((t,i)=>({...t,list:listName,index:i}));
+    if(listName!=='Side Quest') sortTasksByDate(tasksToShow);
+    tasksToShow.forEach(task=>{
+      const li=document.createElement('li'); li.setAttribute('draggable','true');
+      li.innerHTML=`<div class="task-info"><span>${task.text}</span>${task.description?'<span class="description">'+task.description.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')+'</span>':''}${task.date?'<span class="date">'+task.date+'</span>':''}${task.recurrence?'<span class="recurrence">Repeat: '+task.recurrence.type+'</span>':''}</div>
+      <div style="display:flex;"><button class="check-btn">&#10003;</button><button class="edit-btn">&#9998;</button></div>`;
+      li.querySelector('.check-btn').addEventListener('click',()=>handleCheck(task.list,task.index));
+      li.querySelector('.edit-btn').addEventListener('click',()=>{editTask(lists[task.list][task.index]); renderLists();});
+      
+      // Drag and Drop for Side Quest
+      if(listName==='Side Quest'){
+        li.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',task.index); li.style.opacity='0.5';});
+        li.addEventListener('dragend',e=>{li.style.opacity='1';});
+        li.addEventListener('dragover',e=>e.preventDefault());
+        li.addEventListener('drop',e=>{
+          e.preventDefault();
+          const fromIndex=parseInt(e.dataTransfer.getData('text/plain'));
+          const toIndex=task.index;
+          const arr=lists['Side Quest'];
+          const [moved]=arr.splice(fromIndex,1);
+          arr.splice(toIndex,0,moved);
+          saveLists();
+          renderLists();
+        });
       }
+      
+      ul.appendChild(li);
     });
-  </script>
+    card.appendChild(ul);
+    listsContainer.appendChild(card);
+  });
+
+  // Header Buttons
+  listsHeader.querySelectorAll('button.list-btn')?.forEach(b=>b.remove());
+  Object.keys(lists).forEach(listName=>{if(listName==='Dashboard' || listName==='Side Quest') return;
+    const btn=document.createElement('button'); btn.textContent=listName; btn.classList.add('list-btn'); btn.classList.toggle('active',currentList===listName); btn.onclick=()=>{currentList=listName; renderLists();};
+    listsHeader.appendChild(btn);
+  });
+  if(!document.querySelector('button.dashboard-btn')){
+    const dbBtn=document.createElement('button'); dbBtn.textContent='Dashboard'; dbBtn.classList.add('dashboard-btn'); dbBtn.onclick=()=>{currentList='Dashboard'; renderLists();};
+    listsHeader.insertBefore(dbBtn,listsHeader.firstChild);
+  }
+  if(!document.querySelector('button.side-quest-btn')){
+    const sqBtn=document.createElement('button'); sqBtn.textContent='Side Quest'; sqBtn.classList.add('side-quest-btn'); sqBtn.classList.toggle('active',currentList==='Side Quest'); sqBtn.onclick=()=>{currentList='Side Quest'; renderLists();};
+    listsHeader.insertBefore(sqBtn,document.querySelector('button.list-btn')||listsHeader.lastChild);
+  }
+}
+
+document.getElementById('add-list-btn').addEventListener('click',()=>{
+  const name=document.getElementById('new-list-name').value.trim(); if(!name||lists[name]) return; lists[name]=[]; currentList=name; document.getElementById('new-list-name').value=''; saveLists(); renderLists();
+});
+
+renderLists();
+</script>
 </body>
 </html>
-
