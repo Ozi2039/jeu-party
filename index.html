@@ -23,7 +23,6 @@
   .phone {
     width: 320px;
     height: 600px;
-    border: 16px solid #222;
     border-radius: 36px;
     background: url('Zu1MKPS9.jpg') no-repeat center/cover;
     display: flex;
@@ -36,6 +35,7 @@
     transition: all 0.3s ease;
   }
 
+  /* Overlay sombre pour lisibilité */
   .phone::before {
     content: "";
     position: absolute;
@@ -49,6 +49,14 @@
   }
 
   .phone > * { position: relative; z-index: 1; }
+
+  /* Plein écran */
+  .fullscreen {
+    width: 100vw !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
 
   .screen {display:none; width:100%; flex-direction:column; align-items:center; justify-content:center;}
   .active {display:flex;}
@@ -115,17 +123,11 @@
 
   .slide-text {text-align:center; margin-top:10px; font-size:14px; color:#ccc;}
 
-  /* Responsive pour mobile */
+  /* Responsive PC */
   @media (max-width: 480px) {
-    .phone {
-      width: 100vw;
-      height: 100vh;
-      border-radius: 0;
-      border: none;
-      box-shadow: none;
-    }
-    .phone::before { border-radius: 0; }
-    .question {max-width: 90%;}
+    .phone { width: 100%; height: 100%; border-radius:0; }
+    .phone::before { border-radius:0; }
+    .question { max-width: 90%; }
   }
 
 </style>
@@ -175,30 +177,16 @@ document.getElementById("questionsInput").value = JSON.stringify(questions, null
 
 function addPlayer(){
   const name = document.getElementById("playerInput").value.trim();
-  if(name){
-    players.push(name);
-    document.getElementById("playerInput").value = "";
-    renderPlayers();
-  }
+  if(name){ players.push(name); document.getElementById("playerInput").value = ""; renderPlayers(); }
 }
-
 function renderPlayers(){
   const list = document.getElementById("playersList");
   list.innerHTML = players.map((p,i)=>`<div>${p} <button onclick="removePlayer(${i})">❌</button></div>`).join("");
 }
-
-function removePlayer(i){
-  players.splice(i,1);
-  renderPlayers();
-}
-
+function removePlayer(i){ players.splice(i,1); renderPlayers(); }
 function saveQuestions(){
-  try {
-    questions = JSON.parse(document.getElementById("questionsInput").value);
-    alert("Questions mises à jour !");
-  } catch(e){
-    alert("Erreur JSON invalide !");
-  }
+  try { questions = JSON.parse(document.getElementById("questionsInput").value); alert("Questions mises à jour !"); } 
+  catch(e){ alert("Erreur JSON invalide !"); }
 }
 
 const menu = document.getElementById("menu");
@@ -211,10 +199,10 @@ const phone = document.getElementById("phone");
 document.getElementById("playBtn").addEventListener("click", startGame);
 
 function toggleFullScreen() {
-  const docEl = document.documentElement;
   if (!document.fullscreenElement) {
+    const docEl = document.documentElement;
     if (docEl.requestFullscreen) docEl.requestFullscreen();
-    else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen(); // iOS Safari
+    else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
     else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
     phone.classList.add('fullscreen');
   } else {
@@ -225,86 +213,44 @@ function toggleFullScreen() {
 }
 
 function startGame(){
-  if(players.length === 0){ alert("Ajoute au moins un joueur !"); return; }
-  if(questions.length === 0){ alert("Ajoute au moins une question !"); return; }
+  if(players.length===0){ alert("Ajoute au moins un joueur !"); return; }
+  if(questions.length===0){ alert("Ajoute au moins une question !"); return; }
 
   const player = players[Math.floor(Math.random()*players.length)];
   const question = questions[Math.floor(Math.random()*questions.length)];
-  
+
   callerName.textContent = `📞 Yo ${player}, Jackson t'appelle !`;
   questionText.textContent = question;
 
   menu.classList.remove("active");
   callScreen.classList.add("active");
 
-  // Masquer les inputs/menu pour immersion
   document.querySelectorAll('#menu input, #menu textarea, #menu button').forEach(el => el.style.display='none');
 
   initSlider();
 }
 
-function continueGame(){
-  callScreen.classList.remove("active");
-  questionScreen.classList.remove("active");
-  startGame();
-}
-
-function backToMenu(){
-  questionScreen.classList.remove("active");
-  callScreen.classList.remove("active");
-  menu.classList.add("active");
-
-  // Remettre les inputs/menu visibles
+function continueGame(){ callScreen.classList.remove("active"); questionScreen.classList.remove("active"); startGame(); }
+function backToMenu(){ 
+  questionScreen.classList.remove("active"); callScreen.classList.remove("active"); menu.classList.add("active");
   document.querySelectorAll('#menu input, #menu textarea, #menu button').forEach(el => el.style.display='block');
 }
 
 function initSlider(){
   const btn = document.getElementById("slideBtn");
-  let isDragging = false;
-  let startX = 0;
-  btn.style.left = "5px";
+  let isDragging=false, startX=0;
+  btn.style.left="5px";
 
-  // Desktop
-  btn.onmousedown = e => { isDragging = true; startX = e.clientX; };
-  document.onmouseup = e => { 
-    if(isDragging){
-      isDragging = false;
-      if(parseInt(btn.style.left) > 220){
-        callScreen.classList.remove("active");
-        questionScreen.classList.add("active");
-      } else { btn.style.left = "5px"; }
-    }
-  };
-  document.onmousemove = e => {
-    if(isDragging){
-      let dx = e.clientX - startX;
-      let newLeft = Math.min(Math.max(5, 5+dx), 225);
-      btn.style.left = newLeft+"px";
-    }
-  };
+  btn.onmousedown=e=>{ isDragging=true; startX=e.clientX; };
+  document.onmouseup=e=>{ 
+    if(isDragging){ isDragging=false; if(parseInt(btn.style.left)>220){ callScreen.classList.remove("active"); questionScreen.classList.add("active"); } 
+    else btn.style.left="5px"; } };
+  document.onmousemove=e=>{ if(isDragging){ let dx=e.clientX-startX; btn.style.left=Math.min(Math.max(5,5+dx),225)+"px"; } };
 
-  // Mobile
-  btn.ontouchstart = e => { isDragging = true; startX = e.touches[0].clientX; };
-  btn.ontouchend = e => { 
-    if(isDragging){
-      isDragging = false;
-      if(parseInt(btn.style.left) > 220){
-        callScreen.classList.remove("active");
-        questionScreen.classList.add("active");
-      } else { btn.style.left = "5px"; }
-    }
-  };
-  btn.ontouchmove = e => {
-    if(isDragging){
-      let dx = e.touches[0].clientX - startX;
-      let newLeft = Math.min(Math.max(5, 5+dx), 225);
-      btn.style.left = newLeft+"px";
-      e.preventDefault();
-    }
-  };
+  btn.ontouchstart=e=>{ isDragging=true; startX=e.touches[0].clientX; };
+  btn.ontouchend=e=>{ if(isDragging){ isDragging=false; if(parseInt(btn.style.left)>220){ callScreen.classList.remove("active"); questionScreen.classList.add("active"); } else btn.style.left="5px"; } };
+  btn.ontouchmove=e=>{ if(isDragging){ let dx=e.touches[0].clientX-startX; btn.style.left=Math.min(Math.max(5,5+dx),225)+"px"; e.preventDefault(); } };
 }
 </script>
 </body>
 </html>
-
-
