@@ -212,6 +212,12 @@ function startGame(){
 
   menu.classList.remove("active");
   callScreen.classList.add("active");
+
+  // Vibrer sur mobile si supporté
+  if("vibrate" in navigator){
+    navigator.vibrate([200, 100, 200]);
+  }
+
   initSlider();
 }
 
