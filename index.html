@@ -1,393 +1,257 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Jeu de Vérité — Party</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vérité Party</title>
 <style>
-  :root{
-    --bg:#0f1724; --card:#0b1220; --accent:#06b6d4; --muted:#9aa6b2; --glass: rgba(255,255,255,0.03);
+  body {
+    margin:0;
+    font-family:sans-serif;
+    background:#0d1117;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:100vh;
   }
-  *{box-sizing:border-box;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
-  body{margin:0; min-height:100vh; background:linear-gradient(180deg,#071027 0%, #061521 100%); color:#e6eef6; display:flex; align-items:center; justify-content:center; padding:28px;}
-  .app{width:100%; max-width:980px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px; padding:20px; box-shadow: 0 10px 30px rgba(2,6,23,0.6);}
-  h1{margin:0 0 8px; font-size:20px;}
-  .grid{display:grid; grid-template-columns: 1fr 380px; gap:18px;}
-  .card{background:var(--card); padding:14px; border-radius:10px; box-shadow: 0 6px 18px rgba(2,6,23,0.5);}
-  label{font-size:13px; color:var(--muted);}
-  input[type="text"], textarea, select {width:100%; padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:var(--glass); color:inherit; margin-top:6px;}
-  .players-list{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;}
-  .player-pill{background:rgba(255,255,255,0.03); padding:6px 10px; border-radius:999px; display:inline-flex; gap:8px; align-items:center;}
-  button{background:var(--accent); border:none; color:#041018; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600;}
-  .muted{color:var(--muted); font-size:13px;}
-  .controls{display:flex; gap:8px; margin-top:12px;}
-  .big{font-size:20px; padding:12px 16px; border-radius:12px;}
-  .result{margin-top:12px; padding:14px; border-radius:10px; background:linear-gradient(180deg, rgba(6,27,36,0.6), rgba(3,14,20,0.5)); text-align:center;}
-  .who{font-size:18px; font-weight:700;}
-  .question{margin-top:8px; font-size:16px; color:#dff7fb;}
-  .editor{height:260px; font-family:monospace; font-size:13px; white-space:pre-wrap; overflow:auto;}
-  .file-row{display:flex; gap:8px; align-items:center; margin-top:8px;}
-  .note{font-size:13px; color:var(--muted); margin-top:8px;}
-  .small{font-size:13px; padding:6px 8px;}
-  .danger{background:#ff6b6b; color:white;}
-  footer{margin-top:14px; font-size:12px; color:var(--muted); text-align:right;}
-  @media(max-width:900px){ .grid{grid-template-columns:1fr; } .card{padding:12px;} }
+
+  /* Conteneur du téléphone */
+  .phone {
+    width: 320px;
+    height: 600px;
+    border: 16px solid #222;
+    border-radius: 36px;
+    background: url('Zu1MKPS9.jpg') no-repeat center/cover;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 20px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Overlay sombre pour lisibilité */
+  .phone::before {
+    content: "";
+    position: absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background: rgba(0,0,0,0.5); /* noir semi-transparent */
+    z-index: 0;
+    border-radius: 36px;
+  }
+
+  /* Tous les contenus à l'intérieur du téléphone au-dessus de l'overlay */
+  .phone > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .screen {display:none; width:100%; flex-direction:column; align-items:center; justify-content:center;}
+  .active {display:flex;}
+
+  button {
+    padding:12px 20px; 
+    margin:5px; 
+    border:none; 
+    border-radius:8px; 
+    cursor:pointer; 
+    background:#00d4ff; 
+    font-weight:bold; 
+    font-size:16px;
+    color:#000;
+  }
+
+  input, textarea {
+    padding:8px; 
+    margin:5px; 
+    border-radius:6px; 
+    border:none; 
+    width:100%;
+    background: rgba(255,255,255,0.8);
+    color: #000;
+  }
+
+  .players-list div {margin:3px 0;}
+
+  /* Appel entrant */
+  .call-box {text-align:center; width: 100%;}
+  .caller {font-size:20px; margin-bottom:20px;}
+  .slide-container {
+    position: relative;
+    width: 100%;
+    height: 60px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 30px;
+    overflow: hidden;
+  }
+  .slide-btn {
+    position: absolute;
+    top:5px;
+    left:5px;
+    width:50px;
+    height:50px;
+    background:#00ff88;
+    border-radius:50%;
+    cursor:grab;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    user-select: none;
+  }
+  .question {
+    font-size:20px;
+    max-width:280px;
+    padding:20px;
+    background: rgba(0,0,0,0.7);
+    border-radius:12px;
+    margin:20px;
+    text-align:center;
+  }
+
+  /* Texte glisser */
+  .slide-text {text-align:center; margin-top:10px; font-size:14px; color:#ccc;}
 </style>
 </head>
 <body>
-  <div class="app" role="application">
-    <h1>Jeu de Vérité — Party</h1>
-    <div class="grid">
-      <!-- Left column: gameplay -->
-      <div>
-        <div class="card">
-          <label>Ajouter un joueur (nom) :</label>
-          <div style="display:flex; gap:8px; margin-top:8px;">
-            <input id="playerName" type="text" placeholder="Ex : Alice" />
-            <button id="addPlayerBtn">Ajouter</button>
-          </div>
-          <div class="players-list" id="playersList" aria-live="polite"></div>
 
-          <div style="margin-top:12px;">
-            <label>Sélection de question :</label>
-            <select id="questionMode" style="margin-top:6px;">
-              <option value="embarrassing">Embarassantes</option>
-              <option value="funny">Drôles</option>
-            </select>
-            <div class="controls">
-              <button id="startBtn" class="big">Lancer un tour</button>
-              <button id="nextBtn" class="big muted" title="Passer à la question suivante">Suivant</button>
-              <button id="clearPlayers" class="small danger">Effacer joueurs</button>
-            </div>
-
-            <div class="result" id="result" aria-live="polite" style="display:none;">
-              <div class="who" id="who"></div>
-              <div class="question" id="questionText"></div>
-              <div style="margin-top:10px;">
-                <button id="shuffleBtn" class="small">Relancer (nouveau joueur/question)</button>
-                <button id="copyBtn" class="small">Copier la question</button>
-              </div>
-            </div>
-            <p class="note">Astuce : tu peux aussi charger/éditer ta liste de questions dans l'éditeur à droite et la télécharger comme fichier JSON.</p>
-          </div>
-        </div>
-
-        <!-- Quick options -->
-        <div style="margin-top:12px;" class="card">
-          <strong>Options rapides</strong>
-          <div style="display:flex; gap:8px; margin-top:10px;">
-            <button id="randomPlayerBtn" class="small">Choisir joueur aléatoire</button>
-            <button id="randomQuestionBtn" class="small">Choisir question aléatoire</button>
-            <button id="resetQuestions" class="small">Restaurer questions par défaut</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right column: editor + file I/O -->
-      <div>
-        <div class="card">
-          <strong>Éditeur de questions (JSON)</strong>
-          <p class="muted" style="margin:6px 0 10px;">Le format attendu : <code>["question 1","question 2", ...]</code></p>
-          <textarea id="jsonEditor" class="editor" aria-label="Éditeur de questions JSON"></textarea>
-
-          <div class="file-row">
-            <input id="fileInput" type="file" accept=".json" />
-            <button id="loadFileBtn" class="small">Charger le fichier</button>
-            <button id="downloadBtn" class="small">Télécharger JSON</button>
-          </div>
-
-          <div style="display:flex; gap:8px; margin-top:8px;">
-            <button id="applyEditor" class="small">Appliquer l'éditeur</button>
-            <button id="addQuestionBtn" class="small">Ajouter une question</button>
-            <button id="clearQuestions" class="small danger">Vider toutes</button>
-          </div>
-
-          <p class="note">Remarque : si tu héberges ce fichier via un serveur local, tu peux aussi remplacer `questions.json` à la racine et recharger la page.</p>
-        </div>
-      </div>
-    </div>
-
-    <footer>Fichier JSON modifiable — édite, charge ou télécharge ta liste.</footer>
+<div class="phone">
+  <!-- Menu principal -->
+  <div id="menu" class="screen active">
+    <h1>🎉 Vérité Party 🎉</h1>
+    <h3>Liste des joueurs</h3>
+    <div id="playersList"></div>
+    <input type="text" id="playerInput" placeholder="Nom du joueur">
+    <button onclick="addPlayer()">Ajouter joueur</button>
+    
+    <h3>Questions (JSON)</h3>
+    <textarea id="questionsInput" rows="5" cols="30"></textarea><br>
+    <button onclick="saveQuestions()">Sauvegarder Questions</button>
+    
+    <br><br>
+    <button id="playBtn">Jouer</button>
   </div>
 
+  <!-- Écran appel entrant -->
+  <div id="callScreen" class="screen">
+    <div class="call-box">
+      <div class="caller" id="callerName"></div>
+      <div class="slide-container" id="slider">
+        <div class="slide-btn" id="slideBtn">📞</div>
+      </div>
+      <div class="slide-text">→ Glisse pour décrocher</div>
+    </div>
+  </div>
+
+  <!-- Écran question -->
+  <div id="questionScreen" class="screen">
+    <div class="question" id="questionText"></div>
+    <div>
+      <button onclick="continueGame()">Continuer</button>
+      <button onclick="backToMenu()">Menu</button>
+    </div>
+  </div>
+</div>
+
 <script>
-/* Exemple de questions par défaut (2 catégories possible) */
-const defaultQuestions = {
-  embarrassing: [
-    "Quelle est la chose la plus gênante que tes parents aient découverte à ton sujet ?",
-    "Raconte ton pire rendez-vous amoureux.",
-    "Quel est le mensonge le plus absurde que tu aies dit pour t'excuser ?",
-    "As-tu déjà envoyé un texto gênant à la mauvaise personne ? Raconte."
-  ],
-  funny: [
-    "Si tu devais choisir un animal comme colocataire, lequel et pourquoi ?",
-    "Quelle est la plus mauvaise coupe de cheveux que tu aies eue ?",
-    "As-tu déjà dansé comme un fou en étant seul(e) ? Décris la scène.",
-    "Quel est ton talent inutile le plus impressionnant ?"
-  ]
-};
-
-/* State */
-let questions = {...defaultQuestions}; // objet {embarrassing:[], funny:[]}
 let players = [];
+let questions = ["Quelle est ta plus grande honte ?", "Ton plus gros mensonge ?", "Ton secret le plus gênant ?"];
+document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
 
-/* Elements */
-const playerName = document.getElementById('playerName');
-const addPlayerBtn = document.getElementById('addPlayerBtn');
-const playersList = document.getElementById('playersList');
-const startBtn = document.getElementById('startBtn');
-const nextBtn = document.getElementById('nextBtn');
-const clearPlayers = document.getElementById('clearPlayers');
-const result = document.getElementById('result');
-const who = document.getElementById('who');
-const questionText = document.getElementById('questionText');
-const shuffleBtn = document.getElementById('shuffleBtn');
-const copyBtn = document.getElementById('copyBtn');
-const randomPlayerBtn = document.getElementById('randomPlayerBtn');
-const randomQuestionBtn = document.getElementById('randomQuestionBtn');
-const resetQuestions = document.getElementById('resetQuestions');
-
-const jsonEditor = document.getElementById('jsonEditor');
-const fileInput = document.getElementById('fileInput');
-const loadFileBtn = document.getElementById('loadFileBtn');
-const downloadBtn = document.getElementById('downloadBtn');
-const applyEditor = document.getElementById('applyEditor');
-const addQuestionBtn = document.getElementById('addQuestionBtn');
-const clearQuestionsBtn = document.getElementById('clearQuestions');
-
-const questionModeSelect = document.getElementById('questionMode');
-
-/* Helpers */
-function saveToLocal() {
-  localStorage.setItem('truthGame_questions', JSON.stringify(questions));
-}
-function loadFromLocal() {
-  const s = localStorage.getItem('truthGame_questions');
-  if (s) {
-    try {
-      const obj = JSON.parse(s);
-      if (obj.embarrassing && obj.fun) {} // noop
-      questions = {...defaultQuestions, ...obj};
-    } catch(e){ /* ignore */ }
-  }
-}
-function renderPlayers(){
-  playersList.innerHTML = '';
-  players.forEach((p, i) => {
-    const pill = document.createElement('div');
-    pill.className = 'player-pill';
-    pill.innerHTML = `<span>${escapeHtml(p)}</span> <button data-i="${i}" title="Supprimer" style="background:transparent;border:0;color:var(--muted);cursor:pointer;">✕</button>`;
-    playersList.appendChild(pill);
-  });
-  // attach delete handlers
-  playersList.querySelectorAll('button').forEach(b => {
-    b.addEventListener('click', e => {
-      const idx = Number(b.getAttribute('data-i'));
-      players.splice(idx,1);
-      renderPlayers();
-    });
-  });
-}
-function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-function pickRandom(arr){
-  if(!arr || arr.length===0) return null;
-  return arr[Math.floor(Math.random()*arr.length)];
-}
-
-function showResult(player, q){
-  who.textContent = player;
-  questionText.textContent = q;
-  result.style.display = 'block';
-}
-
-/* Core game actions */
-addPlayerBtn.addEventListener('click', ()=>{
-  const name = playerName.value.trim();
+function addPlayer(){
+  const name = document.getElementById("playerInput").value.trim();
   if(name){
     players.push(name);
-    playerName.value = '';
+    document.getElementById("playerInput").value = "";
     renderPlayers();
   }
-});
-playerName.addEventListener('keydown', e => { if(e.key==='Enter') addPlayerBtn.click(); });
-
-startBtn.addEventListener('click', ()=>{
-  if(players.length===0){ alert("Ajoute au moins un joueur."); return; }
-  const player = pickRandom(players);
-  const mode = questionModeSelect.value;
-  const q = pickRandom(questions[mode] || []);
-  if(!q){ alert("Aucune question disponible pour cette catégorie."); return; }
-  showResult(player, q);
-});
-shuffleBtn.addEventListener('click', ()=> startBtn.click());
-nextBtn.addEventListener('click', ()=>{
-  // passe à la question suivante pour le même joueur si visible
-  if(result.style.display === 'none'){ startBtn.click(); return; }
-  const currentPlayer = who.textContent || pickRandom(players);
-  const mode = questionModeSelect.value;
-  const q = pickRandom(questions[mode] || []);
-  if(!q){ alert("Aucune question disponible pour cette catégorie."); return; }
-  showResult(currentPlayer, q);
-});
-copyBtn.addEventListener('click', ()=>{
-  const text = questionText.textContent;
-  if(!text) return;
-  navigator.clipboard?.writeText(text).then(()=> alert("Question copiée !")).catch(()=> alert("Impossible de copier."));
-});
-randomPlayerBtn.addEventListener('click', ()=>{
-  if(players.length===0) { alert("Pas de joueurs."); return; }
-  alert("Joueur : " + pickRandom(players));
-});
-randomQuestionBtn.addEventListener('click', ()=>{
-  const mode = questionModeSelect.value;
-  alert("Question : " + (pickRandom(questions[mode]) || "Aucune question"));
-});
-clearPlayers.addEventListener('click', ()=>{
-  if(confirm("Effacer tous les joueurs ?")) { players = []; renderPlayers(); }
-});
-
-/* Editor and JSON handling */
-function refreshEditor(){
-  // show only the selected category as JSON array, but allow switching categories by editing mode
-  const mode = questionModeSelect.value;
-  jsonEditor.value = JSON.stringify(questions[mode] || [], null, 2);
 }
 
-applyEditor.addEventListener('click', ()=>{
+function renderPlayers(){
+  const list = document.getElementById("playersList");
+  list.innerHTML = players.map((p,i)=>`<div>${p} <button onclick="removePlayer(${i})">❌</button></div>`).join("");
+}
+
+function removePlayer(i){
+  players.splice(i,1);
+  renderPlayers();
+}
+
+function saveQuestions(){
   try {
-    const arr = JSON.parse(jsonEditor.value);
-    if(!Array.isArray(arr)) throw new Error("Le JSON doit être un tableau de chaînes.");
-    const mode = questionModeSelect.value;
-    questions[mode] = arr.map(x => String(x));
-    saveToLocal();
-    alert("Questions appliquées pour la catégorie : " + mode);
+    questions = JSON.parse(document.getElementById("questionsInput").value);
+    alert("Questions mises à jour !");
   } catch(e){
-    alert("Erreur JSON : " + (e.message || e));
+    alert("Erreur JSON invalide !");
   }
-});
+}
 
-addQuestionBtn.addEventListener('click', ()=>{
-  const newQ = prompt("Écris la nouvelle question :");
-  if(newQ){
-    const mode = questionModeSelect.value;
-    questions[mode].push(newQ);
-    refreshEditor();
-    saveToLocal();
-  }
-});
+const menu = document.getElementById("menu");
+const callScreen = document.getElementById("callScreen");
+const questionScreen = document.getElementById("questionScreen");
+const callerName = document.getElementById("callerName");
+const questionText = document.getElementById("questionText");
 
-clearQuestionsBtn.addEventListener('click', ()=>{
-  if(confirm("Vider toutes les questions pour la catégorie sélectionnée ?")) {
-    const mode = questionModeSelect.value;
-    questions[mode] = [];
-    refreshEditor();
-    saveToLocal();
-  }
-});
+document.getElementById("playBtn").addEventListener("click", startGame);
 
-resetQuestions.addEventListener('click', ()=>{
-  if(confirm("Restaurer les questions par défaut (écrasera les modifications locales) ?")){
-    questions = JSON.parse(JSON.stringify(defaultQuestions));
-    refreshEditor();
-    saveToLocal();
-  }
-});
+function startGame(){
+  if(players.length === 0){ alert("Ajoute au moins un joueur !"); return; }
+  if(questions.length === 0){ alert("Ajoute au moins une question !"); return; }
 
-/* File load */
-loadFileBtn.addEventListener('click', ()=>{
-  const f = fileInput.files && fileInput.files[0];
-  if(!f){ alert("Choisis un fichier JSON à charger."); return; }
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      const parsed = JSON.parse(reader.result);
-      // support both formats : either an object {embarrassing:[], funny:[]} or a simple array to replace current category
-      if(Array.isArray(parsed)){
-        const mode = questionModeSelect.value;
-        questions[mode] = parsed.map(x=>String(x));
-      } else if(parsed.embarrassing || parsed.funny){
-        // merge but prefer parsed values
-        questions.embarrassing = Array.isArray(parsed.embarrassing) ? parsed.embarrassing.map(String) : questions.embarrassing;
-        questions.funny = Array.isArray(parsed.funny) ? parsed.funny.map(String) : questions.funny;
+  const player = players[Math.floor(Math.random()*players.length)];
+  const question = questions[Math.floor(Math.random()*questions.length)];
+  
+  callerName.textContent = `📞 Yo ${player}, Jackson t'appelle !`;
+  questionText.textContent = question;
+
+  menu.classList.remove("active");
+  callScreen.classList.add("active");
+  initSlider();
+}
+
+function continueGame(){
+  callScreen.classList.remove("active");
+  questionScreen.classList.remove("active");
+  startGame();
+}
+
+function backToMenu(){
+  questionScreen.classList.remove("active");
+  callScreen.classList.remove("active");
+  menu.classList.add("active");
+}
+
+function initSlider(){
+  const btn = document.getElementById("slideBtn");
+  let isDragging = false;
+  let startX = 0;
+  btn.style.left = "5px";
+
+  btn.onmousedown = e => { isDragging = true; startX = e.clientX; };
+  document.onmouseup = e => { 
+    if(isDragging){
+      isDragging = false;
+      if(parseInt(btn.style.left) > 220){
+        callScreen.classList.remove("active");
+        questionScreen.classList.add("active");
       } else {
-        throw new Error("Format JSON inconnu. Soit un tableau de chaînes, soit un objet {embarrassing:[], funny:[]}.");
+        btn.style.left = "5px";
       }
-      saveToLocal();
-      refreshEditor();
-      alert("Fichier chargé avec succès.");
-    } catch(e){
-      alert("Erreur pendant le chargement : " + e.message);
     }
   };
-  reader.readAsText(f);
-});
-
-/* Download current JSON */
-downloadBtn.addEventListener('click', ()=>{
-  const mode = questionModeSelect.value;
-  const arr = questions[mode] || [];
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(arr, null, 2));
-  const a = document.createElement('a');
-  a.href = dataStr;
-  a.download = `questions_${mode}.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-});
-
-/* when switching category, update editor to show that category's JSON */
-questionModeSelect.addEventListener('change', refreshEditor);
-
-/* initialization: try localStorage, otherwise defaults */
-(function init(){
-  const stored = localStorage.getItem('truthGame_questions');
-  if(stored){
-    try {
-      const parsed = JSON.parse(stored);
-      if(parsed.embarrassing || parsed.funny) questions = {...questions, ...parsed};
-    } catch(e){}
-  }
-  // ensure keys exist
-  if(!questions.embarrassing) questions.embarrassing = [];
-  if(!questions.funny) questions.funny = [];
-  refreshEditor();
-  renderPlayers();
-})();
-
-/* allow saving the whole object (both categories) */
-function downloadFullJSON(){
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(questions, null, 2));
-  const a = document.createElement('a');
-  a.href = dataStr;
-  a.download = `questions_full.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  document.onmousemove = e => {
+    if(isDragging){
+      let dx = e.clientX - startX;
+      let newLeft = Math.min(Math.max(5, 5+dx), 225);
+      btn.style.left = newLeft+"px";
+    }
+  };
 }
-
-/* small UX: double click pill to edit player name */
-playersList.addEventListener('dblclick', e => {
-  if(!e.target.closest('.player-pill')) return;
-  const pill = e.target.closest('.player-pill');
-  const idx = Array.from(playersList.children).indexOf(pill);
-  const nv = prompt("Modifier le nom du joueur :", players[idx]);
-  if(nv) { players[idx] = nv; renderPlayers(); }
-});
-
-/* keyboard shortcuts */
-document.addEventListener('keydown', e=>{
-  if(e.key === ' ' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA'){
-    e.preventDefault();
-    startBtn.click();
-  }
-});
-
-/* small safety: validate editor content periodically */
-setInterval(()=> {
-  // keep editor in sync if user hasn't modified it by hand recently
-}, 2000);
-
 </script>
 </body>
 </html>
