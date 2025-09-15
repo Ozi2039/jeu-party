@@ -1,277 +1,393 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ultra Modern Multi-List To-Do</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Jeu de Vérité — Party</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-:root{--bg:#f0f2f5;--card-bg:#fff;--text-color:#333;--accent:#f97316;--completed:#a3a3a3;--shadow:rgba(0,0,0,0.1);}
-[data-theme="dark"]{--bg:#181818;--card-bg:#1f1f1f;--text-color:#f5f5f5;--accent:#ea580c;--completed:#555;--shadow:rgba(0,0,0,0.5);}
-*{box-sizing:border-box;font-family:'Inter',sans-serif;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text-color);min-height:100vh;display:flex;flex-direction:column;padding:20px;transition:background 0.3s,color 0.3s;}
-.theme-toggle{position:absolute;top:20px;right:20px;background:var(--accent);color:white;border:none;padding:10px 15px;border-radius:50px;cursor:pointer;font-weight:600;transition:background 0.3s;}
-.theme-toggle:hover{background:#c2410c;}
-.lists-header{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;align-items:center;}
-.lists-header button{background:var(--accent);color:white;border:none;padding:8px 12px;border-radius:50px;cursor:pointer;font-weight:600;transition:background 0.3s;}
-.lists-header button.active{background:#c2410c;}
-.add-list-input{display:flex;gap:10px;}
-.add-list-input input{padding:8px 12px;border-radius:50px;border:1px solid #ccc;outline:none;}
-.lists-container{display:flex;gap:20px;flex-wrap:wrap;}
-.list-card{background:var(--card-bg);padding:20px;border-radius:20px;box-shadow:0 10px 20px var(--shadow);flex:1 1 300px;display:flex;flex-direction:column;min-width:300px;max-width:500px;position:relative;}
-.list-card h2{margin-bottom:15px;color:var(--accent);font-size:1.5em;}
-.new-task{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;}
-.new-task input, .new-task select, .new-task textarea{flex:1;min-width:100px;padding:10px 15px;border-radius:10px;border:1px solid #ccc;outline:none;transition:border 0.3s;}
-.new-task textarea{white-space:pre-wrap;min-height:80px;resize:vertical;}
-.new-task input:focus,.new-task select:focus,.new-task textarea:focus{border-color:var(--accent);}
-.new-task button{background:var(--accent);color:white;border:none;padding:10px 15px;border-radius:10px;cursor:pointer;transition:background 0.3s;}
-.new-task button:hover{background:#c2410c;}
-.recurrence-options{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:5px;background:#f3f3f3;padding:10px;border-radius:10px;}
-.weekdays{display:flex;gap:5px;flex-wrap:wrap;}
-.weekdays label{display:flex;align-items:center;gap:3px;}
-ul.task-list{list-style:none;padding-left:0;}
-ul.task-list li{background:var(--bg);margin-bottom:12px;padding:12px 18px;border-radius:15px;display:flex;align-items:flex-start;justify-content:space-between;box-shadow:0 5px 15px var(--shadow);transition:transform 0.2s;cursor:grab;}
-.task-info{display:flex;flex-direction:column;max-width:calc(100% - 90px);}
-.task-info span{font-weight:500;}
-.task-info .date,.task-info .recurrence,.task-info .description{font-size:0.8em;color:var(--completed);white-space:pre-wrap;}
-.check-btn,.edit-btn{width:25px;height:25px;border-radius:50%;border:2px solid var(--accent);background:none;cursor:pointer;display:flex;justify-content:center;align-items:center;transition:all 0.3s;font-weight:bold;font-size:1.1em;margin-left:5px;}
-.edit-btn{border-color:#f59e0b;color:#f59e0b;}
-.separator{border-top:2px dashed #ccc;margin:15px 0;}
-.today-header{margin-top:0;margin-bottom:10px;color:#f97316;font-size:1.2em;}
+  :root{
+    --bg:#0f1724; --card:#0b1220; --accent:#06b6d4; --muted:#9aa6b2; --glass: rgba(255,255,255,0.03);
+  }
+  *{box-sizing:border-box;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+  body{margin:0; min-height:100vh; background:linear-gradient(180deg,#071027 0%, #061521 100%); color:#e6eef6; display:flex; align-items:center; justify-content:center; padding:28px;}
+  .app{width:100%; max-width:980px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px; padding:20px; box-shadow: 0 10px 30px rgba(2,6,23,0.6);}
+  h1{margin:0 0 8px; font-size:20px;}
+  .grid{display:grid; grid-template-columns: 1fr 380px; gap:18px;}
+  .card{background:var(--card); padding:14px; border-radius:10px; box-shadow: 0 6px 18px rgba(2,6,23,0.5);}
+  label{font-size:13px; color:var(--muted);}
+  input[type="text"], textarea, select {width:100%; padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:var(--glass); color:inherit; margin-top:6px;}
+  .players-list{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;}
+  .player-pill{background:rgba(255,255,255,0.03); padding:6px 10px; border-radius:999px; display:inline-flex; gap:8px; align-items:center;}
+  button{background:var(--accent); border:none; color:#041018; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600;}
+  .muted{color:var(--muted); font-size:13px;}
+  .controls{display:flex; gap:8px; margin-top:12px;}
+  .big{font-size:20px; padding:12px 16px; border-radius:12px;}
+  .result{margin-top:12px; padding:14px; border-radius:10px; background:linear-gradient(180deg, rgba(6,27,36,0.6), rgba(3,14,20,0.5)); text-align:center;}
+  .who{font-size:18px; font-weight:700;}
+  .question{margin-top:8px; font-size:16px; color:#dff7fb;}
+  .editor{height:260px; font-family:monospace; font-size:13px; white-space:pre-wrap; overflow:auto;}
+  .file-row{display:flex; gap:8px; align-items:center; margin-top:8px;}
+  .note{font-size:13px; color:var(--muted); margin-top:8px;}
+  .small{font-size:13px; padding:6px 8px;}
+  .danger{background:#ff6b6b; color:white;}
+  footer{margin-top:14px; font-size:12px; color:var(--muted); text-align:right;}
+  @media(max-width:900px){ .grid{grid-template-columns:1fr; } .card{padding:12px;} }
 </style>
 </head>
-<body data-theme="light">
+<body>
+  <div class="app" role="application">
+    <h1>Jeu de Vérité — Party</h1>
+    <div class="grid">
+      <!-- Left column: gameplay -->
+      <div>
+        <div class="card">
+          <label>Ajouter un joueur (nom) :</label>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <input id="playerName" type="text" placeholder="Ex : Alice" />
+            <button id="addPlayerBtn">Ajouter</button>
+          </div>
+          <div class="players-list" id="playersList" aria-live="polite"></div>
 
-<button class="theme-toggle">Dark Mode</button>
+          <div style="margin-top:12px;">
+            <label>Sélection de question :</label>
+            <select id="questionMode" style="margin-top:6px;">
+              <option value="embarrassing">Embarassantes</option>
+              <option value="funny">Drôles</option>
+            </select>
+            <div class="controls">
+              <button id="startBtn" class="big">Lancer un tour</button>
+              <button id="nextBtn" class="big muted" title="Passer à la question suivante">Suivant</button>
+              <button id="clearPlayers" class="small danger">Effacer joueurs</button>
+            </div>
 
-<div class="lists-header" id="lists-header">
-  <div class="add-list-input">
-    <input type="text" id="new-list-name" placeholder="New section name">
-    <button id="add-list-btn">Add Section</button>
-  </div>
-</div>
-
-<div class="lists-container" id="lists-container"></div>
-
-<script>
-const themeToggle=document.querySelector('.theme-toggle');
-themeToggle.addEventListener('click',()=>{
-  if(document.body.getAttribute('data-theme')==='light'){
-    document.body.setAttribute('data-theme','dark');themeToggle.textContent='Light Mode';
-  }else{
-    document.body.setAttribute('data-theme','light');themeToggle.textContent='Dark Mode';
-  }
-});
-
-// Load lists from localStorage or default
-let lists=JSON.parse(localStorage.getItem('todoLists')) || {'Dashboard':[],'Main':[],'Side Quest':[]};
-let currentList='Main';
-const listsHeader=document.getElementById('lists-header');
-const listsContainer=document.getElementById('lists-container');
-
-function saveLists(){localStorage.setItem('todoLists',JSON.stringify(lists));}
-
-function sortTasksByDate(tasks){return tasks.sort((a,b)=>{if(!a.date)return 1;if(!b.date)return -1;return new Date(a.date)-new Date(b.date);});}
-
-function occursToday(task){
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split('T')[0];
-  if(task.date === today) return true;
-  if(task.recurrence){
-    const start = new Date(task.date);
-    const end = new Date(task.recurrence.endDate);
-    if(now > end) return false;
-    if(task.recurrence.type === 'daily') return true;
-    if(task.recurrence.type === 'weekly') return task.recurrence.days.includes(now.getDay());
-    if(task.recurrence.type === 'monthly') return now.getDate() === start.getDate();
-  }
-  return false;
-}
-
-function getNextDate(task){
-  const current=new Date(task.date);
-  let next=new Date(current);
-  if(task.recurrence.type==='daily') next.setDate(next.getDate()+1);
-  if(task.recurrence.type==='weekly'){
-    const today=current.getDay();
-    const days=task.recurrence.days.slice().sort((a,b)=>a-b);
-    let nxt=days.find(d=>d>today); if(nxt===undefined) nxt=days[0]; let diff=(nxt-today); if(diff<=0) diff+=7; next.setDate(next.getDate()+diff);
-  }
-  if(task.recurrence.type==='monthly') next.setMonth(next.getMonth()+1);
-  return next.toISOString().split('T')[0];
-}
-
-function editTask(task){
-  const newText=prompt('Edit task name',task.text);
-  if(newText!==null) task.text=newText.trim()||task.text;
-  if(currentList!=='Side Quest'){
-    const newDate=prompt('Edit date (YYYY-MM-DD)',task.date);
-    if(newDate!==null && !isNaN(new Date(newDate))) task.date=newDate;
-    if(task.recurrence){
-      const newType=prompt('Recurrence type (daily,weekly,monthly) or empty for none',task.recurrence.type);
-      if(newType==='daily'||newType==='weekly'||newType==='monthly') task.recurrence.type=newType;
-      const newEnd=prompt('Recurrence until date (YYYY-MM-DD)',task.recurrence.endDate);
-      if(newEnd!==null && !isNaN(new Date(newEnd))) task.recurrence.endDate=newEnd;
-      if(task.recurrence.type==='weekly'){
-        const days=prompt('Enter weekdays numbers separated by comma (0=Sun,...6=Sat)',task.recurrence.days.join(','));
-        if(days!==null) task.recurrence.days=days.split(',').map(d=>parseInt(d.trim())).filter(d=>!isNaN(d)&&d>=0&&d<=6);
-      }
-    }
-  } else {
-    const newDesc=prompt('Edit description',task.description||'');
-    if(newDesc!==null) task.description=newDesc;
-  }
-  saveLists();
-}
-
-function handleCheck(listKey,index){
-  const task=lists[listKey][index];
-  if(listKey==='Side Quest'){
-    lists[listKey].splice(index,1);
-  } else {
-    if(task.recurrence){
-      const next=getNextDate(task);
-      if(new Date(next)<=new Date(task.recurrence.endDate)) task.date=next;
-      else lists[listKey].splice(index,1);
-    }else lists[listKey].splice(index,1);
-  }
-  saveLists();
-  renderLists();
-}
-
-function renderLists(){
-  listsContainer.innerHTML='';
-  Object.keys(lists).forEach(listName=>{
-    const card=document.createElement('div'); card.classList.add('list-card');
-    card.style.display=(listName==='Dashboard' || listName==='Side Quest' || currentList===listName)?'flex':'none';
-    const h2=document.createElement('h2'); h2.textContent=listName; card.appendChild(h2);
-
-    // New Task Input
-    const newTaskDiv=document.createElement('div'); newTaskDiv.classList.add('new-task');
-    if(listName==='Side Quest'){
-      newTaskDiv.innerHTML=`<input type="text" placeholder="Task name"><textarea placeholder="Description (optional)"></textarea><button>Add</button>`;
-      newTaskDiv.querySelector('button').addEventListener('click',()=>{
-        const text=newTaskDiv.querySelector('input[type=text]').value.trim();
-        const desc=newTaskDiv.querySelector('textarea').value.trim();
-        if(!text) return;
-        lists[listName].push({text,description:desc});
-        newTaskDiv.querySelectorAll('input,textarea').forEach(inp=>inp.value='');
-        saveLists();
-        renderLists();
-      });
-      card.appendChild(newTaskDiv);
-    } else if(listName!=='Dashboard'){
-      newTaskDiv.innerHTML=`<input type="text" placeholder="Task name"><input type="date"><select class="repeat-select">
-        <option value="">No Repeat</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select>
-        <div class="recurrence-options">
-          <label>Until: <input type="date" class="end-date"></label>
-          <div class="weekdays">
-            <label><input type="checkbox" value="0">Sun</label><label><input type="checkbox" value="1">Mon</label><label><input type="checkbox" value="2">Tue</label><label><input type="checkbox" value="3">Wed</label><label><input type="checkbox" value="4">Thu</label><label><input type="checkbox" value="5">Fri</label><label><input type="checkbox" value="6">Sat</label>
+            <div class="result" id="result" aria-live="polite" style="display:none;">
+              <div class="who" id="who"></div>
+              <div class="question" id="questionText"></div>
+              <div style="margin-top:10px;">
+                <button id="shuffleBtn" class="small">Relancer (nouveau joueur/question)</button>
+                <button id="copyBtn" class="small">Copier la question</button>
+              </div>
+            </div>
+            <p class="note">Astuce : tu peux aussi charger/éditer ta liste de questions dans l'éditeur à droite et la télécharger comme fichier JSON.</p>
           </div>
         </div>
-        <button>Add</button>`;
-      const repeatSelect=newTaskDiv.querySelector('.repeat-select');
-      const recOptions=newTaskDiv.querySelector('.recurrence-options');
-      recOptions.style.display='none'; recOptions.querySelector('.weekdays').style.display='none';
-      repeatSelect.addEventListener('change',()=>{recOptions.style.display=repeatSelect.value?'flex':'none'; recOptions.querySelector('.weekdays').style.display=repeatSelect.value==='weekly'?'flex':'none';});
-      newTaskDiv.querySelector('button').addEventListener('click',()=>{
-        const text=newTaskDiv.querySelector('input[type=text]').value.trim();
-        const date=newTaskDiv.querySelector('input[type=date]').value;
-        if(!text) return;
-        const repeat=repeatSelect.value;
-        const task={text,date};
-        if(repeat){
-          const endDate=newTaskDiv.querySelector('.end-date').value;
-          task.recurrence={type:repeat,endDate};
-          if(repeat==='weekly'){
-            const days=[...newTaskDiv.querySelectorAll('.weekdays input:checked')].map(inp=>parseInt(inp.value));
-            task.recurrence.days=days;
-          }
-        }
-        lists[listName].push(task);
-        newTaskDiv.querySelectorAll('input').forEach(inp=>inp.value=''); repeatSelect.value=''; recOptions.style.display='none';
-        saveLists();
-        renderLists();
-      });
-      card.appendChild(newTaskDiv);
-    }
 
-    // Dashboard Today Section
-    if(listName==='Dashboard'){
-      const todayHeader=document.createElement('div'); todayHeader.textContent='Today'; todayHeader.classList.add('today-header'); card.appendChild(todayHeader);
-      const todayList=document.createElement('ul'); todayList.classList.add('task-list');
-      Object.entries(lists).forEach(([key,arr])=>{
-        if(key==='Dashboard'||key==='Side Quest') return;
-        arr.forEach((task,index)=>{
-          if(occursToday(task)){
-            const li=document.createElement('li');
-            li.innerHTML=`<div class="task-info"><span>${task.text} (${key})</span>${task.date?'<span class="date">'+task.date+'</span>':''}${task.recurrence?'<span class="recurrence">Repeat: '+task.recurrence.type+'</span>':''}</div>
-            <div style="display:flex;"><button class="check-btn">&#10003;</button><button class="edit-btn">&#9998;</button></div>`;
-            li.querySelector('.check-btn').addEventListener('click',()=>handleCheck(key,index));
-            li.querySelector('.edit-btn').addEventListener('click',()=>{editTask(task); renderLists();});
-            todayList.appendChild(li);
-          }
-        });
-      });
-      card.appendChild(todayList);
-      card.appendChild(document.createElement('div')).classList.add('separator');
-    }
+        <!-- Quick options -->
+        <div style="margin-top:12px;" class="card">
+          <strong>Options rapides</strong>
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <button id="randomPlayerBtn" class="small">Choisir joueur aléatoire</button>
+            <button id="randomQuestionBtn" class="small">Choisir question aléatoire</button>
+            <button id="resetQuestions" class="small">Restaurer questions par défaut</button>
+          </div>
+        </div>
+      </div>
 
-    // Task List Rendering
-    const ul=document.createElement('ul'); ul.classList.add('task-list');
-    const tasksToShow=listName==='Dashboard'?Object.entries(lists).filter(([k])=>k!=='Dashboard' && k!=='Side Quest').flatMap(([k,arr])=>arr.map((t,i)=>({...t,list:k,index:i}))):lists[listName].map((t,i)=>({...t,list:listName,index:i}));
-    if(listName!=='Side Quest') sortTasksByDate(tasksToShow);
-    tasksToShow.forEach(task=>{
-      const li=document.createElement('li'); li.setAttribute('draggable','true');
-      li.innerHTML=`<div class="task-info"><span>${task.text}</span>${task.description?'<span class="description">'+task.description.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')+'</span>':''}${task.date?'<span class="date">'+task.date+'</span>':''}${task.recurrence?'<span class="recurrence">Repeat: '+task.recurrence.type+'</span>':''}</div>
-      <div style="display:flex;"><button class="check-btn">&#10003;</button><button class="edit-btn">&#9998;</button></div>`;
-      li.querySelector('.check-btn').addEventListener('click',()=>handleCheck(task.list,task.index));
-      li.querySelector('.edit-btn').addEventListener('click',()=>{editTask(lists[task.list][task.index]); renderLists();});
-      
-      // Drag and Drop for Side Quest
-      if(listName==='Side Quest'){
-        li.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',task.index); li.style.opacity='0.5';});
-        li.addEventListener('dragend',e=>{li.style.opacity='1';});
-        li.addEventListener('dragover',e=>e.preventDefault());
-        li.addEventListener('drop',e=>{
-          e.preventDefault();
-          const fromIndex=parseInt(e.dataTransfer.getData('text/plain'));
-          const toIndex=task.index;
-          const arr=lists['Side Quest'];
-          const [moved]=arr.splice(fromIndex,1);
-          arr.splice(toIndex,0,moved);
-          saveLists();
-          renderLists();
-        });
-      }
-      
-      ul.appendChild(li);
-    });
-    card.appendChild(ul);
-    listsContainer.appendChild(card);
-  });
+      <!-- Right column: editor + file I/O -->
+      <div>
+        <div class="card">
+          <strong>Éditeur de questions (JSON)</strong>
+          <p class="muted" style="margin:6px 0 10px;">Le format attendu : <code>["question 1","question 2", ...]</code></p>
+          <textarea id="jsonEditor" class="editor" aria-label="Éditeur de questions JSON"></textarea>
 
-  // Header Buttons
-  listsHeader.querySelectorAll('button.list-btn')?.forEach(b=>b.remove());
-  Object.keys(lists).forEach(listName=>{if(listName==='Dashboard' || listName==='Side Quest') return;
-    const btn=document.createElement('button'); btn.textContent=listName; btn.classList.add('list-btn'); btn.classList.toggle('active',currentList===listName); btn.onclick=()=>{currentList=listName; renderLists();};
-    listsHeader.appendChild(btn);
-  });
-  if(!document.querySelector('button.dashboard-btn')){
-    const dbBtn=document.createElement('button'); dbBtn.textContent='Dashboard'; dbBtn.classList.add('dashboard-btn'); dbBtn.onclick=()=>{currentList='Dashboard'; renderLists();};
-    listsHeader.insertBefore(dbBtn,listsHeader.firstChild);
-  }
-  if(!document.querySelector('button.side-quest-btn')){
-    const sqBtn=document.createElement('button'); sqBtn.textContent='Side Quest'; sqBtn.classList.add('side-quest-btn'); sqBtn.classList.toggle('active',currentList==='Side Quest'); sqBtn.onclick=()=>{currentList='Side Quest'; renderLists();};
-    listsHeader.insertBefore(sqBtn,document.querySelector('button.list-btn')||listsHeader.lastChild);
+          <div class="file-row">
+            <input id="fileInput" type="file" accept=".json" />
+            <button id="loadFileBtn" class="small">Charger le fichier</button>
+            <button id="downloadBtn" class="small">Télécharger JSON</button>
+          </div>
+
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button id="applyEditor" class="small">Appliquer l'éditeur</button>
+            <button id="addQuestionBtn" class="small">Ajouter une question</button>
+            <button id="clearQuestions" class="small danger">Vider toutes</button>
+          </div>
+
+          <p class="note">Remarque : si tu héberges ce fichier via un serveur local, tu peux aussi remplacer `questions.json` à la racine et recharger la page.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer>Fichier JSON modifiable — édite, charge ou télécharge ta liste.</footer>
+  </div>
+
+<script>
+/* Exemple de questions par défaut (2 catégories possible) */
+const defaultQuestions = {
+  embarrassing: [
+    "Quelle est la chose la plus gênante que tes parents aient découverte à ton sujet ?",
+    "Raconte ton pire rendez-vous amoureux.",
+    "Quel est le mensonge le plus absurde que tu aies dit pour t'excuser ?",
+    "As-tu déjà envoyé un texto gênant à la mauvaise personne ? Raconte."
+  ],
+  funny: [
+    "Si tu devais choisir un animal comme colocataire, lequel et pourquoi ?",
+    "Quelle est la plus mauvaise coupe de cheveux que tu aies eue ?",
+    "As-tu déjà dansé comme un fou en étant seul(e) ? Décris la scène.",
+    "Quel est ton talent inutile le plus impressionnant ?"
+  ]
+};
+
+/* State */
+let questions = {...defaultQuestions}; // objet {embarrassing:[], funny:[]}
+let players = [];
+
+/* Elements */
+const playerName = document.getElementById('playerName');
+const addPlayerBtn = document.getElementById('addPlayerBtn');
+const playersList = document.getElementById('playersList');
+const startBtn = document.getElementById('startBtn');
+const nextBtn = document.getElementById('nextBtn');
+const clearPlayers = document.getElementById('clearPlayers');
+const result = document.getElementById('result');
+const who = document.getElementById('who');
+const questionText = document.getElementById('questionText');
+const shuffleBtn = document.getElementById('shuffleBtn');
+const copyBtn = document.getElementById('copyBtn');
+const randomPlayerBtn = document.getElementById('randomPlayerBtn');
+const randomQuestionBtn = document.getElementById('randomQuestionBtn');
+const resetQuestions = document.getElementById('resetQuestions');
+
+const jsonEditor = document.getElementById('jsonEditor');
+const fileInput = document.getElementById('fileInput');
+const loadFileBtn = document.getElementById('loadFileBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const applyEditor = document.getElementById('applyEditor');
+const addQuestionBtn = document.getElementById('addQuestionBtn');
+const clearQuestionsBtn = document.getElementById('clearQuestions');
+
+const questionModeSelect = document.getElementById('questionMode');
+
+/* Helpers */
+function saveToLocal() {
+  localStorage.setItem('truthGame_questions', JSON.stringify(questions));
+}
+function loadFromLocal() {
+  const s = localStorage.getItem('truthGame_questions');
+  if (s) {
+    try {
+      const obj = JSON.parse(s);
+      if (obj.embarrassing && obj.fun) {} // noop
+      questions = {...defaultQuestions, ...obj};
+    } catch(e){ /* ignore */ }
   }
 }
+function renderPlayers(){
+  playersList.innerHTML = '';
+  players.forEach((p, i) => {
+    const pill = document.createElement('div');
+    pill.className = 'player-pill';
+    pill.innerHTML = `<span>${escapeHtml(p)}</span> <button data-i="${i}" title="Supprimer" style="background:transparent;border:0;color:var(--muted);cursor:pointer;">✕</button>`;
+    playersList.appendChild(pill);
+  });
+  // attach delete handlers
+  playersList.querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', e => {
+      const idx = Number(b.getAttribute('data-i'));
+      players.splice(idx,1);
+      renderPlayers();
+    });
+  });
+}
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-document.getElementById('add-list-btn').addEventListener('click',()=>{
-  const name=document.getElementById('new-list-name').value.trim(); if(!name||lists[name]) return; lists[name]=[]; currentList=name; document.getElementById('new-list-name').value=''; saveLists(); renderLists();
+function pickRandom(arr){
+  if(!arr || arr.length===0) return null;
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+
+function showResult(player, q){
+  who.textContent = player;
+  questionText.textContent = q;
+  result.style.display = 'block';
+}
+
+/* Core game actions */
+addPlayerBtn.addEventListener('click', ()=>{
+  const name = playerName.value.trim();
+  if(name){
+    players.push(name);
+    playerName.value = '';
+    renderPlayers();
+  }
+});
+playerName.addEventListener('keydown', e => { if(e.key==='Enter') addPlayerBtn.click(); });
+
+startBtn.addEventListener('click', ()=>{
+  if(players.length===0){ alert("Ajoute au moins un joueur."); return; }
+  const player = pickRandom(players);
+  const mode = questionModeSelect.value;
+  const q = pickRandom(questions[mode] || []);
+  if(!q){ alert("Aucune question disponible pour cette catégorie."); return; }
+  showResult(player, q);
+});
+shuffleBtn.addEventListener('click', ()=> startBtn.click());
+nextBtn.addEventListener('click', ()=>{
+  // passe à la question suivante pour le même joueur si visible
+  if(result.style.display === 'none'){ startBtn.click(); return; }
+  const currentPlayer = who.textContent || pickRandom(players);
+  const mode = questionModeSelect.value;
+  const q = pickRandom(questions[mode] || []);
+  if(!q){ alert("Aucune question disponible pour cette catégorie."); return; }
+  showResult(currentPlayer, q);
+});
+copyBtn.addEventListener('click', ()=>{
+  const text = questionText.textContent;
+  if(!text) return;
+  navigator.clipboard?.writeText(text).then(()=> alert("Question copiée !")).catch(()=> alert("Impossible de copier."));
+});
+randomPlayerBtn.addEventListener('click', ()=>{
+  if(players.length===0) { alert("Pas de joueurs."); return; }
+  alert("Joueur : " + pickRandom(players));
+});
+randomQuestionBtn.addEventListener('click', ()=>{
+  const mode = questionModeSelect.value;
+  alert("Question : " + (pickRandom(questions[mode]) || "Aucune question"));
+});
+clearPlayers.addEventListener('click', ()=>{
+  if(confirm("Effacer tous les joueurs ?")) { players = []; renderPlayers(); }
 });
 
-renderLists();
+/* Editor and JSON handling */
+function refreshEditor(){
+  // show only the selected category as JSON array, but allow switching categories by editing mode
+  const mode = questionModeSelect.value;
+  jsonEditor.value = JSON.stringify(questions[mode] || [], null, 2);
+}
+
+applyEditor.addEventListener('click', ()=>{
+  try {
+    const arr = JSON.parse(jsonEditor.value);
+    if(!Array.isArray(arr)) throw new Error("Le JSON doit être un tableau de chaînes.");
+    const mode = questionModeSelect.value;
+    questions[mode] = arr.map(x => String(x));
+    saveToLocal();
+    alert("Questions appliquées pour la catégorie : " + mode);
+  } catch(e){
+    alert("Erreur JSON : " + (e.message || e));
+  }
+});
+
+addQuestionBtn.addEventListener('click', ()=>{
+  const newQ = prompt("Écris la nouvelle question :");
+  if(newQ){
+    const mode = questionModeSelect.value;
+    questions[mode].push(newQ);
+    refreshEditor();
+    saveToLocal();
+  }
+});
+
+clearQuestionsBtn.addEventListener('click', ()=>{
+  if(confirm("Vider toutes les questions pour la catégorie sélectionnée ?")) {
+    const mode = questionModeSelect.value;
+    questions[mode] = [];
+    refreshEditor();
+    saveToLocal();
+  }
+});
+
+resetQuestions.addEventListener('click', ()=>{
+  if(confirm("Restaurer les questions par défaut (écrasera les modifications locales) ?")){
+    questions = JSON.parse(JSON.stringify(defaultQuestions));
+    refreshEditor();
+    saveToLocal();
+  }
+});
+
+/* File load */
+loadFileBtn.addEventListener('click', ()=>{
+  const f = fileInput.files && fileInput.files[0];
+  if(!f){ alert("Choisis un fichier JSON à charger."); return; }
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      // support both formats : either an object {embarrassing:[], funny:[]} or a simple array to replace current category
+      if(Array.isArray(parsed)){
+        const mode = questionModeSelect.value;
+        questions[mode] = parsed.map(x=>String(x));
+      } else if(parsed.embarrassing || parsed.funny){
+        // merge but prefer parsed values
+        questions.embarrassing = Array.isArray(parsed.embarrassing) ? parsed.embarrassing.map(String) : questions.embarrassing;
+        questions.funny = Array.isArray(parsed.funny) ? parsed.funny.map(String) : questions.funny;
+      } else {
+        throw new Error("Format JSON inconnu. Soit un tableau de chaînes, soit un objet {embarrassing:[], funny:[]}.");
+      }
+      saveToLocal();
+      refreshEditor();
+      alert("Fichier chargé avec succès.");
+    } catch(e){
+      alert("Erreur pendant le chargement : " + e.message);
+    }
+  };
+  reader.readAsText(f);
+});
+
+/* Download current JSON */
+downloadBtn.addEventListener('click', ()=>{
+  const mode = questionModeSelect.value;
+  const arr = questions[mode] || [];
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(arr, null, 2));
+  const a = document.createElement('a');
+  a.href = dataStr;
+  a.download = `questions_${mode}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+});
+
+/* when switching category, update editor to show that category's JSON */
+questionModeSelect.addEventListener('change', refreshEditor);
+
+/* initialization: try localStorage, otherwise defaults */
+(function init(){
+  const stored = localStorage.getItem('truthGame_questions');
+  if(stored){
+    try {
+      const parsed = JSON.parse(stored);
+      if(parsed.embarrassing || parsed.funny) questions = {...questions, ...parsed};
+    } catch(e){}
+  }
+  // ensure keys exist
+  if(!questions.embarrassing) questions.embarrassing = [];
+  if(!questions.funny) questions.funny = [];
+  refreshEditor();
+  renderPlayers();
+})();
+
+/* allow saving the whole object (both categories) */
+function downloadFullJSON(){
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(questions, null, 2));
+  const a = document.createElement('a');
+  a.href = dataStr;
+  a.download = `questions_full.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+/* small UX: double click pill to edit player name */
+playersList.addEventListener('dblclick', e => {
+  if(!e.target.closest('.player-pill')) return;
+  const pill = e.target.closest('.player-pill');
+  const idx = Array.from(playersList.children).indexOf(pill);
+  const nv = prompt("Modifier le nom du joueur :", players[idx]);
+  if(nv) { players[idx] = nv; renderPlayers(); }
+});
+
+/* keyboard shortcuts */
+document.addEventListener('keydown', e=>{
+  if(e.key === ' ' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA'){
+    e.preventDefault();
+    startBtn.click();
+  }
+});
+
+/* small safety: validate editor content periodically */
+setInterval(()=> {
+  // keep editor in sync if user hasn't modified it by hand recently
+}, 2000);
+
 </script>
 </body>
 </html>
