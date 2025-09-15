@@ -125,6 +125,7 @@
   <!-- Menu principal -->
   <div id="menu" class="screen active">
     <h1>🎉 Vérité Party 🎉</h1>
+    <button onclick="toggleFullScreen()">📱 Plein écran</button>
     <h3>Liste des joueurs</h3>
     <div id="playersList"></div>
     <input type="text" id="playerInput" placeholder="Nom du joueur">
@@ -200,6 +201,14 @@ const questionText = document.getElementById("questionText");
 
 document.getElementById("playBtn").addEventListener("click", startGame);
 
+function toggleFullScreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => alert(`Erreur: ${err.message}`));
+  } else {
+    document.exitFullscreen();
+  }
+}
+
 function startGame(){
   if(players.length === 0){ alert("Ajoute au moins un joueur !"); return; }
   if(questions.length === 0){ alert("Ajoute au moins une question !"); return; }
@@ -213,10 +222,8 @@ function startGame(){
   menu.classList.remove("active");
   callScreen.classList.add("active");
 
-  // Vibrer sur mobile si supporté
-  if("vibrate" in navigator){
-    navigator.vibrate([200, 100, 200]);
-  }
+  // Masquer les inputs/menu pour immersion
+  document.querySelectorAll('#menu input, #menu textarea, #menu button').forEach(el => el.style.display='none');
 
   initSlider();
 }
@@ -231,6 +238,9 @@ function backToMenu(){
   questionScreen.classList.remove("active");
   callScreen.classList.remove("active");
   menu.classList.add("active");
+
+  // Remettre les inputs/menu visibles
+  document.querySelectorAll('#menu input, #menu textarea, #menu button').forEach(el => el.style.display='block');
 }
 
 function initSlider(){
@@ -281,10 +291,11 @@ function initSlider(){
       let dx = e.touches[0].clientX - startX;
       let newLeft = Math.min(Math.max(5, 5+dx), 225);
       btn.style.left = newLeft+"px";
-      e.preventDefault(); // empêche le scroll
+      e.preventDefault();
     }
   };
 }
 </script>
 </body>
 </html>
+
