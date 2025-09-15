@@ -2,21 +2,24 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Vérité Party</title>
 <style>
-  body {
+  html, body {
     margin:0;
+    padding:0;
+    height:100%;
+    width:100%;
     font-family:sans-serif;
     background:#0d1117;
     color:white;
     display:flex;
     align-items:center;
     justify-content:center;
-    height:100vh;
+    overflow:hidden;
   }
 
-  /* Conteneur principal */
+  /* Conteneur téléphone */
   .phone {
     width: 320px;
     height: 600px;
@@ -33,7 +36,6 @@
     transition: all 0.3s ease;
   }
 
-  /* Overlay sombre pour lisibilité */
   .phone::before {
     content: "";
     position: absolute;
@@ -46,20 +48,7 @@
     border-radius: 36px;
   }
 
-  /* Contenus au-dessus de l'overlay */
-  .phone > * {
-    position: relative;
-    z-index: 1;
-  }
-
-  /* Plein écran mobile */
-  .fullscreen {
-    width: 100% !important;
-    height: 100% !important;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-  }
+  .phone > * { position: relative; z-index: 1; }
 
   .screen {display:none; width:100%; flex-direction:column; align-items:center; justify-content:center;}
   .active {display:flex;}
@@ -88,7 +77,6 @@
 
   .players-list div {margin:3px 0;}
 
-  /* Appel entrant */
   .call-box {text-align:center; width: 100%;}
   .caller {font-size:20px; margin-bottom:20px;}
   .slide-container {
@@ -113,7 +101,7 @@
     justify-content:center;
     font-weight:bold;
     user-select: none;
-    touch-action: none; /* pour éviter le scroll sur mobile */
+    touch-action: none;
   }
   .question {
     font-size:20px;
@@ -125,26 +113,26 @@
     text-align:center;
   }
 
-  /* Texte glisser */
   .slide-text {text-align:center; margin-top:10px; font-size:14px; color:#ccc;}
 
-  /* Responsive : mobile */
+  /* Responsive pour mobile */
   @media (max-width: 480px) {
     .phone {
-      width: 100%;
-      height: 100%;
+      width: 100vw;
+      height: 100vh;
       border-radius: 0;
       border: none;
       box-shadow: none;
     }
+    .phone::before { border-radius: 0; }
     .question {max-width: 90%;}
   }
+
 </style>
 </head>
 <body>
 
 <div class="phone" id="phone">
-  <!-- Menu principal -->
   <div id="menu" class="screen active">
     <h1>🎉 Vérité Party 🎉</h1>
     <button onclick="toggleFullScreen()">📱 Plein écran</button>
@@ -161,7 +149,6 @@
     <button id="playBtn">Jouer</button>
   </div>
 
-  <!-- Écran appel entrant -->
   <div id="callScreen" class="screen">
     <div class="call-box">
       <div class="caller" id="callerName"></div>
@@ -172,7 +159,6 @@
     </div>
   </div>
 
-  <!-- Écran question -->
   <div id="questionScreen" class="screen">
     <div class="question" id="questionText"></div>
     <div>
@@ -225,11 +211,15 @@ const phone = document.getElementById("phone");
 document.getElementById("playBtn").addEventListener("click", startGame);
 
 function toggleFullScreen() {
+  const docEl = document.documentElement;
   if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(err => alert(`Erreur: ${err.message}`));
+    if (docEl.requestFullscreen) docEl.requestFullscreen();
+    else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen(); // iOS Safari
+    else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
     phone.classList.add('fullscreen');
   } else {
-    document.exitFullscreen();
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
     phone.classList.remove('fullscreen');
   }
 }
@@ -282,9 +272,7 @@ function initSlider(){
       if(parseInt(btn.style.left) > 220){
         callScreen.classList.remove("active");
         questionScreen.classList.add("active");
-      } else {
-        btn.style.left = "5px";
-      }
+      } else { btn.style.left = "5px"; }
     }
   };
   document.onmousemove = e => {
@@ -296,19 +284,14 @@ function initSlider(){
   };
 
   // Mobile
-  btn.ontouchstart = e => { 
-    isDragging = true; 
-    startX = e.touches[0].clientX; 
-  };
+  btn.ontouchstart = e => { isDragging = true; startX = e.touches[0].clientX; };
   btn.ontouchend = e => { 
     if(isDragging){
       isDragging = false;
       if(parseInt(btn.style.left) > 220){
         callScreen.classList.remove("active");
         questionScreen.classList.add("active");
-      } else {
-        btn.style.left = "5px";
-      }
+      } else { btn.style.left = "5px"; }
     }
   };
   btn.ontouchmove = e => {
