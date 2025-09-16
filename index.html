@@ -57,7 +57,7 @@
   /* Plein écran */
   .fullscreen {
     width: 100vw !important;
-    height: 100vh !important;
+    height: calc(var(--vh, 1vh) * 100) !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     padding: 0 !important;
@@ -134,7 +134,7 @@
   @media (max-width: 480px) {
     .phone { 
       width: 100vw; 
-      height: 100vh; 
+      height: calc(var(--vh, 1vh) * 100); 
       border-radius:0; 
       box-shadow: none;
     }
@@ -307,6 +307,24 @@ function initSlider(){
     } 
   };
 }
+
+// Correction du bug de hauteur coupée (Android/iOS)
+function setVh() {
+  let vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+window.addEventListener('resize', setVh);
+window.addEventListener('load', setVh);
+
+// Message pour Apple uniquement
+function isAppleDevice() {
+  return /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
+}
+window.addEventListener("load", () => {
+  if (isAppleDevice()) {
+    alert("⚠️ Sur iPhone/iPad, le mode plein écran doit être activé manuellement.");
+  }
+});
 </script>
 </body>
 </html>
