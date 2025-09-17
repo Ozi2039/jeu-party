@@ -23,7 +23,6 @@
     user-select: none;
   }
 
-  /* Conteneur téléphone */
   .phone {
     width: 320px;
     height: 600px;
@@ -39,7 +38,6 @@
     transition: all 0.3s ease;
   }
 
-  /* Overlay sombre pour lisibilité */
   .phone::before {
     content: "";
     position: absolute;
@@ -54,7 +52,6 @@
 
   .phone > * { position: relative; z-index: 1; }
 
-  /* Plein écran */
   .fullscreen {
     width: 100vw !important;
     height: calc(var(--vh, 1vh) * 100) !important;
@@ -130,7 +127,6 @@
 
   .slide-text {text-align:center; margin-top:10px; font-size:14px; color:#ccc;}
 
-  /* Responsive pour petits écrans */
   @media (max-width: 480px) {
     .phone { 
       width: 100vw; 
@@ -240,7 +236,8 @@ function startGame(){
   const question = questions[Math.floor(Math.random()*questions.length)];
 
   callerName.textContent = `📞 Yo ${player}, Jackson t'appelle !`;
-  questionText.textContent = question;
+  // Ajout du message "Réponds à la question ou prends un shot"
+  questionText.textContent = question + "\n\n👉 Réponds à la question ou prends un shot 🍻";
 
   menu.classList.remove("active");
   callScreen.classList.add("active");
@@ -308,7 +305,6 @@ function initSlider(){
   };
 }
 
-// Correction du bug de hauteur coupée (Android/iOS)
 function setVh() {
   let vh = window.innerHeight * 0.01;
   document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -316,7 +312,6 @@ function setVh() {
 window.addEventListener('resize', setVh);
 window.addEventListener('load', setVh);
 
-// Message pour Apple uniquement
 function isAppleDevice() {
   return /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
 }
