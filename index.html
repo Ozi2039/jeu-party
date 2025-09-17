@@ -64,7 +64,14 @@
     margin: 0 !important;
   }
 
-  .screen {display:none; width:100%; flex-direction:column; align-items:center; justify-content:center;}
+  .screen {
+    display:none;
+    width:100%;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding-bottom: 40px; /* Ajouté pour espacer du bas */
+  }
   .active {display:flex;}
 
   button {
@@ -245,7 +252,7 @@ function startGame(){
   if(questions.length===0){ alert("Ajoute au moins une question !"); return; }
 
   const player = players[Math.floor(Math.random()*players.length)];
-  const question = questions[Math.floor(Math.random()*questions.length)];
+  const question = questions[Math.floor(Math.random()*players.length)];
 
   callerName.textContent = `📞 Yo ${player}, Jackson t'appelle !`;
   questionPrompt.textContent = "🍻 Répond à la question ou prend un shot !";
