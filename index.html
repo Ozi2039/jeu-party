@@ -23,7 +23,6 @@
     user-select: none;
   }
 
-  /* Conteneur téléphone */
   .phone {
     width: 320px;
     height: 600px;
@@ -39,7 +38,6 @@
     transition: all 0.3s ease;
   }
 
-  /* Overlay sombre pour lisibilité */
   .phone::before {
     content: "";
     position: absolute;
@@ -54,7 +52,6 @@
 
   .phone > * { position: relative; z-index: 1; }
 
-  /* Plein écran */
   .fullscreen {
     width: 100vw !important;
     height: calc(var(--vh, 1vh) * 100) !important;
@@ -64,26 +61,27 @@
     margin: 0 !important;
   }
 
-  .screen {
-    display:none;
-    width:100%;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    padding-bottom: 40px; /* Ajouté pour espacer du bas */
-  }
+  .screen {display:none; width:100%; flex-direction:column; align-items:center; justify-content:center;}
   .active {display:flex;}
 
   button {
-    padding:12px 20px; 
+    padding:10px 15px; 
     margin:5px; 
     border:none; 
     border-radius:8px; 
     cursor:pointer; 
     background:#00d4ff; 
     font-weight:bold; 
-    font-size:16px;
+    font-size:14px;
     color:#000;
+    flex: 1;
+  }
+
+  .button-row {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 280px;
   }
 
   input, textarea {
@@ -96,7 +94,13 @@
     color: #000;
   }
 
-  .players-list div {margin:3px 0;}
+  .players-list {
+    margin:3px 0;
+    max-height: 100px; /* Limite la hauteur de la liste */
+    overflow-y: auto; /* Active le défilement vertical */
+    width: 100%;
+    max-width: 280px;
+  }
 
   .call-box {text-align:center; width: 100%;}
   .caller {font-size:20px; margin-bottom:20px;}
@@ -143,7 +147,6 @@
 
   .slide-text {text-align:center; margin-top:10px; font-size:14px; color:#ccc;}
 
-  /* Responsive pour petits écrans */
   @media (max-width: 480px) {
     .phone { 
       width: 100vw; 
@@ -167,7 +170,7 @@
     <h1>🎉 Vérité Party 🎉</h1>
     <button onclick="toggleFullScreen()">📱 Plein écran</button>
     <h3>Liste des joueurs</h3>
-    <div id="playersList"></div>
+    <div id="playersList" class="players-list"></div>
     <input type="text" id="playerInput" placeholder="Nom du joueur">
     <button onclick="addPlayer()">Ajouter joueur</button>
     
@@ -176,7 +179,10 @@
     <button onclick="saveQuestions()">Sauvegarder Questions</button>
     
     <br><br>
-    <button id="playBtn">Jouer</button>
+    <div class="button-row">
+      <button id="playBtn">🎮 Jouer</button>
+      <button onclick="confirmEndGame()">🏁 Terminer</button>
+    </div>
   </div>
 
   <div id="callScreen" class="screen">
@@ -192,27 +198,48 @@
   <div id="questionScreen" class="screen">
     <div class="question-prompt" id="questionPrompt"></div>
     <div class="question" id="questionText"></div>
-    <div>
-      <button onclick="continueGame()">Continuer</button>
-      <button onclick="backToMenu()">Menu</button>
+    <div class="button-row">
+      <button onclick="answerQuestion()">✅ Répondre</button>
+      <button onclick="takeShot()">🥃 Shot</button>
     </div>
+    <div class="button-row">
+      <button onclick="backToMenu()">🏠 Menu</button>
+      <button onclick="confirmEndGame()">🏁 Terminer</button>
+    </div>
+  </div>
+
+  <div id="statsScreen" class="screen">
+    <h2>📊 Stats de la partie</h2>
+    <div id="statsList"></div>
+    <button onclick="endGameToMenu()">🏠 Retour au Menu</button>
   </div>
 </div>
 
 <script>
 let players = [];
 let questions = ["Quelle est ta plus grande honte ?", "Ton plus gros mensonge ?", "Ton secret le plus gênant ?"];
+let stats = {};
+let currentPlayer = "";
 document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
 
 function addPlayer(){
   const name = document.getElementById("playerInput").value.trim();
-  if(name){ players.push(name); document.getElementById("playerInput").value = ""; renderPlayers(); }
+  if(name){ 
+    players.push(name); 
+    stats[name] = {received: 0, answered: 0, shotsTaken: 0};
+    document.getElementById("playerInput").value = ""; 
+    renderPlayers(); 
+  }
 }
 function renderPlayers(){
   const list = document.getElementById("playersList");
   list.innerHTML = players.map((p,i)=>`<div>${p} <button onclick="removePlayer(${i})">❌</button></div>`).join("");
 }
-function removePlayer(i){ players.splice(i,1); renderPlayers(); }
+function removePlayer(i){ 
+  delete stats[players[i]];
+  players.splice(i,1); 
+  renderPlayers(); 
+}
 function saveQuestions(){
   try { questions = JSON.parse(document.getElementById("questionsInput").value); alert("Questions mises à jour !"); } 
   catch(e){ alert("Erreur JSON invalide !"); }
@@ -221,6 +248,7 @@ function saveQuestions(){
 const menu = document.getElementById("menu");
 const callScreen = document.getElementById("callScreen");
 const questionScreen = document.getElementById("questionScreen");
+const statsScreen = document.getElementById("statsScreen");
 const callerName = document.getElementById("callerName");
 const questionText = document.getElementById("questionText");
 const questionPrompt = document.getElementById("questionPrompt");
@@ -251,25 +279,77 @@ function startGame(){
   if(players.length===0){ alert("Ajoute au moins un joueur !"); return; }
   if(questions.length===0){ alert("Ajoute au moins une question !"); return; }
 
+  players.forEach(p => stats[p] = stats[p] || {received: 0, answered: 0, shotsTaken: 0});
+
   const player = players[Math.floor(Math.random()*players.length)];
-  const question = questions[Math.floor(Math.random()*players.length)];
+  const question = questions[Math.floor(Math.random()*questions.length)];
+
+  currentPlayer = player;
+  stats[player].received++;
 
   callerName.textContent = `📞 Yo ${player}, Jackson t'appelle !`;
-  questionPrompt.textContent = "🍻 Répond à la question ou prend un shot !";
+  questionPrompt.textContent = "Répond à la question ou prend un shot :";
   questionText.textContent = question;
 
   menu.classList.remove("active");
   callScreen.classList.add("active");
 
   document.querySelectorAll('#menu input, #menu textarea, #menu button').forEach(el => el.style.display='none');
+  document.querySelectorAll('#menu .button-row').forEach(el => el.style.display='flex');
 
   initSlider();
 }
 
-function continueGame(){ callScreen.classList.remove("active"); questionScreen.classList.remove("active"); startGame(); }
+function answerQuestion(){
+  stats[currentPlayer].answered++;
+  continueGame();
+}
+
+function takeShot(){
+  stats[currentPlayer].shotsTaken++;
+  continueGame();
+}
+
+function continueGame(){ 
+  callScreen.classList.remove("active"); 
+  questionScreen.classList.remove("active"); 
+  startGame(); 
+}
+
 function backToMenu(){ 
-  questionScreen.classList.remove("active"); callScreen.classList.remove("active"); menu.classList.add("active");
+  questionScreen.classList.remove("active"); 
+  callScreen.classList.remove("active"); 
+  menu.classList.add("active");
   document.querySelectorAll('#menu input, #menu textarea, #menu button').forEach(el => el.style.display='block');
+  document.querySelectorAll('#menu .button-row').forEach(el => el.style.display='flex');
+}
+
+function confirmEndGame(){
+  if (confirm("Voulez-vous vraiment terminer la partie ?")) {
+    if (questionScreen.classList.contains("active") && currentPlayer && stats[currentPlayer].received > 0) {
+      stats[currentPlayer].received--; // Annuler la réception de la question en cours
+    }
+    questionScreen.classList.remove("active");
+    callScreen.classList.remove("active");
+    statsScreen.classList.add("active");
+    renderStats();
+  }
+}
+
+function endGameToMenu(){
+  statsScreen.classList.remove("active");
+  menu.classList.add("active");
+  document.querySelectorAll('#menu input, #menu textarea, #menu button').forEach(el => el.style.display='block');
+  document.querySelectorAll('#menu .button-row').forEach(el => el.style.display='flex');
+}
+
+function renderStats(){
+  const list = document.getElementById("statsList");
+  list.innerHTML = players.map(p => {
+    const s = stats[p];
+    const ratio = s.received > 0 ? Math.round((s.answered / s.received) * 100) : 0;
+    return `<div>👤 ${p}: ✅ Réponses: ${s.answered}, 🥃 Shots: ${s.shotsTaken}, 📈 Ratio: ${ratio}%</div>`;
+  }).join("");
 }
 
 function initSlider(){
@@ -324,7 +404,6 @@ function initSlider(){
   };
 }
 
-// Correction du bug de hauteur coupée (Android/iOS)
 function setVh() {
   let vh = window.innerHeight * 0.01;
   document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -332,7 +411,6 @@ function setVh() {
 window.addEventListener('resize', setVh);
 window.addEventListener('load', setVh);
 
-// Message pour Apple uniquement
 function isAppleDevice() {
   return /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
 }
