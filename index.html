@@ -234,8 +234,11 @@
 <script>
 let players = [];
 let questions = [];
+let usedQuestions = [];
 let stats = {};
 let currentPlayer = "";
+let lastPlayer = "";
+let lastQuestion = "";
 document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
 
 function addPlayer(){
@@ -253,6 +256,7 @@ function renderPlayers(){
 }
 function removePlayer(i){ 
   delete stats[players[i]];
+  if (players[i] === lastPlayer) lastPlayer = "";
   players.splice(i,1); 
   renderPlayers(); 
 }
@@ -264,6 +268,8 @@ function handleFileUpload(event) {
     reader.onload = function(e) {
       try {
         questions = JSON.parse(e.target.result);
+        usedQuestions = [];
+        lastQuestion = "";
         document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
         alert("Questions chargées avec succès !");
       } catch (e) {
@@ -315,10 +321,22 @@ function startGame(){
 
   players.forEach(p => stats[p] = stats[p] || {received: 0, answered: 0, shotsTaken: 0});
 
-  const player = players[Math.floor(Math.random()*players.length)];
-  const question = questions[Math.floor(Math.random()*questions.length)];
+  let availablePlayers = players.filter(p => p !== lastPlayer);
+  if (availablePlayers.length === 0) availablePlayers = players;
+  const player = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
 
+  let availableQuestions = questions.filter(q => !usedQuestions.includes(q) && q !== lastQuestion);
+  if (availableQuestions.length === 0) {
+    availableQuestions = questions.filter(q => q !== lastQuestion);
+    usedQuestions = [];
+  }
+  if (availableQuestions.length === 0) availableQuestions = questions;
+  const question = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
+
+  if (!usedQuestions.includes(question)) usedQuestions.push(question);
   currentPlayer = player;
+  lastPlayer = player;
+  lastQuestion = question;
   stats[player].received++;
 
   callerName.textContent = `📞 Yo ${player}, Jackson t'appelle !`;
@@ -461,7 +479,7 @@ function initSlider(){
         questionScreen.classList.add("active"); 
       } else {
         btn.style.left="5px"; 
-      } 
+      }
     } 
   };
   btn.ontouchmove=e=>{ 
