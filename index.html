@@ -96,8 +96,8 @@
 
   .players-list {
     margin:3px 0;
-    max-height: 100px; /* Limite la hauteur de la liste */
-    overflow-y: auto; /* Active le défilement vertical */
+    max-height: 100px;
+    overflow-y: auto;
     width: 100%;
     max-width: 280px;
   }
@@ -146,7 +146,9 @@
   }
 
   .slide-text {text-align:center; margin-top:10px; font-size:14px; color:#ccc;}
-
+  .ask-jackson-screen {text-align:center; width:100%; max-width:280px;}
+  .ask-jackson-screen textarea {min-height:100px; resize:vertical;}
+  
   @media (max-width: 480px) {
     .phone { 
       width: 100vw; 
@@ -174,9 +176,9 @@
     <input type="text" id="playerInput" placeholder="Nom du joueur">
     <button onclick="addPlayer()">Ajouter joueur</button>
     
-    <h3>Questions (JSON)</h3>
-    <textarea id="questionsInput" rows="5" cols="30"></textarea><br>
-    <button onclick="saveQuestions()">Sauvegarder Questions</button>
+    <h3>Importer Questions (JSON)</h3>
+    <input type="file" id="questionsFile" accept=".json">
+    <textarea id="questionsInput" rows="5" cols="30" readonly></textarea><br>
     
     <br><br>
     <div class="button-row">
@@ -208,16 +210,30 @@
     </div>
   </div>
 
+  <div id="askJacksonScreen" class="screen">
+    <div class="ask-jackson-screen">
+      <h2>Pose une question à Jackson</h2>
+      <textarea id="newQuestionInput" placeholder="Ta question pour Jackson..."></textarea>
+      <div class="button-row">
+        <button onclick="submitNewQuestion()">📤 Envoyer</button>
+        <button onclick="skipNewQuestion()">➡️ Passer</button>
+      </div>
+    </div>
+  </div>
+
   <div id="statsScreen" class="screen">
     <h2>📊 Stats de la partie</h2>
     <div id="statsList"></div>
-    <button onclick="endGameToMenu()">🏠 Retour au Menu</button>
+    <div class="button-row">
+      <button onclick="endGameToMenu()">🏠 Retour au Menu</button>
+      <button onclick="downloadQuestions()">⬇️ Télécharger Questions</button>
+    </div>
   </div>
 </div>
 
 <script>
 let players = [];
-let questions = ["Quelle est ta plus grande honte ?", "Ton plus gros mensonge ?", "Ton secret le plus gênant ?"];
+let questions = [];
 let stats = {};
 let currentPlayer = "";
 document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
@@ -240,14 +256,32 @@ function removePlayer(i){
   players.splice(i,1); 
   renderPlayers(); 
 }
-function saveQuestions(){
-  try { questions = JSON.parse(document.getElementById("questionsInput").value); alert("Questions mises à jour !"); } 
-  catch(e){ alert("Erreur JSON invalide !"); }
+
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (file && file.type === "application/json") {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        questions = JSON.parse(e.target.result);
+        document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
+        alert("Questions chargées avec succès !");
+      } catch (e) {
+        alert("Erreur : Fichier JSON invalide !");
+      }
+    };
+    reader.readAsText(file);
+  } else {
+    alert("Veuillez sélectionner un fichier JSON valide !");
+  }
 }
+
+document.getElementById("questionsFile").addEventListener("change", handleFileUpload);
 
 const menu = document.getElementById("menu");
 const callScreen = document.getElementById("callScreen");
 const questionScreen = document.getElementById("questionScreen");
+const askJacksonScreen = document.getElementById("askJacksonScreen");
 const statsScreen = document.getElementById("statsScreen");
 const callerName = document.getElementById("callerName");
 const questionText = document.getElementById("questionText");
@@ -277,7 +311,7 @@ function toggleFullScreen() {
 
 function startGame(){
   if(players.length===0){ alert("Ajoute au moins un joueur !"); return; }
-  if(questions.length===0){ alert("Ajoute au moins une question !"); return; }
+  if(questions.length===0){ alert("Veuillez importer un fichier de questions JSON !"); return; }
 
   players.forEach(p => stats[p] = stats[p] || {received: 0, answered: 0, shotsTaken: 0});
 
@@ -302,23 +336,44 @@ function startGame(){
 
 function answerQuestion(){
   stats[currentPlayer].answered++;
-  continueGame();
+  showAskJacksonScreen();
 }
 
 function takeShot(){
   stats[currentPlayer].shotsTaken++;
+  showAskJacksonScreen();
+}
+
+function showAskJacksonScreen(){
+  questionScreen.classList.remove("active");
+  askJacksonScreen.classList.add("active");
+  document.getElementById("newQuestionInput").value = "";
+}
+
+function submitNewQuestion(){
+  const newQuestion = document.getElementById("newQuestionInput").value.trim();
+  if(newQuestion){
+    questions.push(newQuestion);
+    document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
+  }
+  continueGame();
+}
+
+function skipNewQuestion(){
   continueGame();
 }
 
 function continueGame(){ 
   callScreen.classList.remove("active"); 
   questionScreen.classList.remove("active"); 
+  askJacksonScreen.classList.remove("active");
   startGame(); 
 }
 
 function backToMenu(){ 
   questionScreen.classList.remove("active"); 
   callScreen.classList.remove("active"); 
+  askJacksonScreen.classList.remove("active");
   menu.classList.add("active");
   document.querySelectorAll('#menu input, #menu textarea, #menu button').forEach(el => el.style.display='block');
   document.querySelectorAll('#menu .button-row').forEach(el => el.style.display='flex');
@@ -327,10 +382,11 @@ function backToMenu(){
 function confirmEndGame(){
   if (confirm("Voulez-vous vraiment terminer la partie ?")) {
     if (questionScreen.classList.contains("active") && currentPlayer && stats[currentPlayer].received > 0) {
-      stats[currentPlayer].received--; // Annuler la réception de la question en cours
+      stats[currentPlayer].received--;
     }
     questionScreen.classList.remove("active");
     callScreen.classList.remove("active");
+    askJacksonScreen.classList.remove("active");
     statsScreen.classList.add("active");
     renderStats();
   }
@@ -350,6 +406,19 @@ function renderStats(){
     const ratio = s.received > 0 ? Math.round((s.answered / s.received) * 100) : 0;
     return `<div>👤 ${p}: ✅ Réponses: ${s.answered}, 🥃 Shots: ${s.shotsTaken}, 📈 Ratio: ${ratio}%</div>`;
   }).join("");
+}
+
+function downloadQuestions(){
+  const data = JSON.stringify(questions, null, 2);
+  const blob = new Blob([data], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'questions.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function initSlider(){
