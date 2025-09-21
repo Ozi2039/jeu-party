@@ -301,7 +301,7 @@ function playRingtone() {
   ringtone.play().then(() => {
     audioUnlocked = true;
     if ('vibrate' in navigator) {
-      navigator.vibrate(2000); // Continuous maximum vibration for 2000ms, will repeat due to loop in startGame
+      navigator.vibrate([1000, 200]); // Loop: 1000ms vibrate, 200ms pause
     }
   }).catch(err => {
     console.warn('playRingtone failed:', err);
