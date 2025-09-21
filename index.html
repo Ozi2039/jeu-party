@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Jackson le goat</title>
+<title>Vérité Party</title>
 <style>
   html, body {
     margin:0;
@@ -148,7 +148,15 @@
   .slide-text {text-align:center; margin-top:10px; font-size:14px; color:#ccc;}
   .ask-jackson-screen {text-align:center; width:100%; max-width:280px;}
   .ask-jackson-screen textarea {min-height:100px; resize:vertical;}
-  
+
+  /* bouton Activer son */
+  #enableSoundBtn {
+    display: inline-block; /* visible pour permettre au user de cliquer */
+    background:#ffd166;
+    color:#000;
+    font-weight:bold;
+  }
+
   @media (max-width: 480px) {
     .phone { 
       width: 100vw; 
@@ -168,22 +176,30 @@
 <body>
 
 <div class="phone" id="phone">
+  <!-- Ringtone audio file (must be in same directory) -->
+  <!-- playsinline helps on iOS; preload=auto to speed up -->
+  <audio id="ringtone" src="ringtone.mp3" loop preload="auto" playsinline></audio>
+
   <div id="menu" class="screen active">
-    <h1>🐐 Jackson le goat 🐐</h1>
+    <h1>🎉 Vérité Party 🎉</h1>
     <button onclick="toggleFullScreen()">📱 Plein écran</button>
     <h3>Liste des joueurs</h3>
     <div id="playersList" class="players-list"></div>
     <input type="text" id="playerInput" placeholder="Nom du joueur">
     <button onclick="addPlayer()">Ajouter joueur</button>
-    
+
     <h3>Importer Questions (JSON)</h3>
     <input type="file" id="questionsFile" accept=".json">
     <textarea id="questionsInput" rows="5" cols="30" readonly></textarea><br>
-    
+
     <br><br>
     <div class="button-row">
       <button id="playBtn">🎮 Jouer</button>
       <button onclick="confirmEndGame()">🏁 Terminer</button>
+    </div>
+    <!-- Bouton pour débloquer l'audio si le navigateur le bloque -->
+    <div class="button-row">
+      <button id="enableSoundBtn" onclick="unlockAudio()">🔊 Activer son</button>
     </div>
   </div>
 
@@ -239,31 +255,142 @@ let stats = {};
 let currentPlayer = "";
 let lastPlayer = "";
 let lastQuestion = "";
+
+// Audio variables & unlock helpers
+const ringtone = document.getElementById('ringtone');
+let audioUnlocked = false;
+let audioCtx = null;
+
+// Try to unlock audio on first user gesture (pointerdown) — useful on mobile
+document.addEventListener('pointerdown', function unlockOnce(){
+  // attempt quick unlock; remove listener afterward
+  tryUnlockAudio().finally(()=> {
+    document.removeEventListener('pointerdown', unlockOnce);
+  });
+});
+
+async function tryUnlockAudio(){
+  const btn = document.getElementById('enableSoundBtn');
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    // resume context (some browsers start in suspended state)
+    if (audioCtx.state === 'suspended') {
+      await audioCtx.resume();
+    }
+
+    // play a tiny silent buffer to "unlock" audio on some platforms
+    try {
+      const buff = audioCtx.createBuffer(1, 1, 22050);
+      const src = audioCtx.createBufferSource();
+      src.buffer = buff;
+      src.connect(audioCtx.destination);
+      src.start(0);
+    } catch (silentErr) {
+      console.warn('silent buffer workaround failed:', silentErr);
+    }
+
+    // attempt to play the audio element (user gesture context)
+    await ringtone.play();
+    ringtone.pause();
+    ringtone.currentTime = 0;
+    audioUnlocked = true;
+    if(btn) btn.style.display = 'none';
+    console.log('Audio débloqué via pointerdown');
+    return true;
+  } catch (err) {
+    console.warn('tryUnlockAudio: tentative échouée', err);
+    // fallback attempt with a new Audio() instance (still under user gesture)
+    try {
+      const a = new Audio('ringtone.mp3');
+      a.playsInline = true;
+      a.loop = true;
+      await a.play();
+      a.pause();
+      audioUnlocked = true;
+      if(btn) btn.style.display = 'none';
+      // try to play the main element but don't block
+      try { await ringtone.play(); ringtone.pause(); ringtone.currentTime = 0; } catch(e){}
+      console.log('Audio débloqué via fallback Audio()');
+      return true;
+    } catch (err2) {
+      console.error('tryUnlockAudio: fallback échoué', err2);
+      if(btn) btn.style.display = 'inline-block';
+      return false;
+    }
+  }
+}
+
+async function unlockAudio() {
+  const btn = document.getElementById('enableSoundBtn');
+  try {
+    const ok = await tryUnlockAudio();
+    if(ok) {
+      if(btn) btn.style.display = 'none';
+      alert('Son activé ✓');
+    } else {
+      alert("Le navigateur bloque toujours la lecture audio. Essayez d'appuyer n'importe où sur l'écran, ou ouvrez la page via http://localhost (évitez file://).");
+    }
+  } catch(e){
+    console.error('unlockAudio error', e);
+    alert("Impossible d'activer le son : vérifiez la console et que 'ringtone.mp3' existe dans le même dossier.");
+  }
+}
+
+function playRingtone(){
+  if(!ringtone) return;
+  ringtone.loop = true;
+  // Si audio non débloqué, le bouton reste visible
+  if(!audioUnlocked){
+    const btn = document.getElementById('enableSoundBtn');
+    if(btn) btn.style.display = 'inline-block';
+  }
+  // Tenter la lecture (souvent autorisée si appelée après un clic utilisateur)
+  ringtone.play().then(()=> {
+    audioUnlocked = true;
+    const btn = document.getElementById('enableSoundBtn');
+    if(btn) btn.style.display = 'none';
+  }).catch(err => {
+    console.warn('playRingtone failed:', err);
+    // Laisser le bouton visible pour que l'utilisateur l'active manuellement
+    const btn = document.getElementById('enableSoundBtn');
+    if(btn) btn.style.display = 'inline-block';
+  });
+}
+
+function stopRingtone(){
+  if(!ringtone) return;
+  try{
+    ringtone.pause();
+    ringtone.currentTime = 0;
+  }catch(e){ console.warn('Erreur en stoppant la sonnerie', e); }
+}
+
+/* ---------- reste du code (jeu) ---------- */
 document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
 
 function addPlayer(){
   const name = document.getElementById("playerInput").value.trim();
-  if(name){ 
-    players.push(name); 
+  if(name){
+    players.push(name);
     stats[name] = {received: 0, answered: 0, shotsTaken: 0};
-    document.getElementById("playerInput").value = ""; 
-    renderPlayers(); 
+    document.getElementById("playerInput").value = "";
+    renderPlayers();
   }
 }
 function renderPlayers(){
   const list = document.getElementById("playersList");
   list.innerHTML = players.map((p,i)=>`<div>${p} <button onclick="removePlayer(${i})">❌</button></div>`).join("");
 }
-function removePlayer(i){ 
+function removePlayer(i){
   delete stats[players[i]];
   if (players[i] === lastPlayer) lastPlayer = "";
-  players.splice(i,1); 
-  renderPlayers(); 
+  players.splice(i,1);
+  renderPlayers();
 }
 
 function handleFileUpload(event) {
   const file = event.target.files[0];
-  if (file && file.type === "application/json") {
+  if (file) {
     const reader = new FileReader();
     reader.onload = function(e) {
       try {
@@ -350,15 +477,20 @@ function startGame(){
   document.querySelectorAll('#menu .button-row').forEach(el => el.style.display='flex');
 
   initSlider();
+
+  // Play ringtone. This call happens in response to user click on "Jouer" so should be allowed on most browsers.
+  playRingtone();
 }
 
 function answerQuestion(){
   stats[currentPlayer].answered++;
+  stopRingtone();
   showAskJacksonScreen();
 }
 
 function takeShot(){
   stats[currentPlayer].shotsTaken++;
+  stopRingtone();
   showAskJacksonScreen();
 }
 
@@ -381,16 +513,18 @@ function skipNewQuestion(){
   continueGame();
 }
 
-function continueGame(){ 
-  callScreen.classList.remove("active"); 
-  questionScreen.classList.remove("active"); 
+function continueGame(){
+  callScreen.classList.remove("active");
+  questionScreen.classList.remove("active");
   askJacksonScreen.classList.remove("active");
-  startGame(); 
+  stopRingtone();
+  startGame();
 }
 
-function backToMenu(){ 
-  questionScreen.classList.remove("active"); 
-  callScreen.classList.remove("active"); 
+function backToMenu(){
+  stopRingtone();
+  questionScreen.classList.remove("active");
+  callScreen.classList.remove("active");
   askJacksonScreen.classList.remove("active");
   menu.classList.add("active");
   document.querySelectorAll('#menu input, #menu textarea, #menu button').forEach(el => el.style.display='block');
@@ -402,6 +536,7 @@ function confirmEndGame(){
     if (questionScreen.classList.contains("active") && currentPlayer && stats[currentPlayer].received > 0) {
       stats[currentPlayer].received--;
     }
+    stopRingtone();
     questionScreen.classList.remove("active");
     callScreen.classList.remove("active");
     askJacksonScreen.classList.remove("active");
@@ -452,6 +587,8 @@ function initSlider(){
     if(isDragging){ 
       isDragging=false; 
       if(parseInt(btn.style.left) > maxSlideDistance * 0.9){ 
+        // stop ringtone when call is accepted
+        stopRingtone();
         callScreen.classList.remove("active"); 
         questionScreen.classList.add("active"); 
       } else {
@@ -475,6 +612,8 @@ function initSlider(){
     if(isDragging){ 
       isDragging=false; 
       if(parseInt(btn.style.left) > maxSlideDistance * 0.9){ 
+        // stop ringtone when call is accepted
+        stopRingtone();
         callScreen.classList.remove("active"); 
         questionScreen.classList.add("active"); 
       } else {
@@ -503,7 +642,7 @@ function isAppleDevice() {
 }
 window.addEventListener("load", () => {
   if (isAppleDevice()) {
-    alert("⚠️ Sur iPhone/iPad, le mode plein écran doit être activé manuellement.");
+    alert("⚠️ Sur iPhone/iPad, le mode plein écran doit être activé manuellement. Si la sonnerie ne se lance pas, appuie sur 'Activer son' ou tape n'importe où sur l'écran.");
   }
 });
 </script>
