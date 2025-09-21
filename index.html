@@ -168,8 +168,6 @@
 <body>
 
 <div class="phone" id="phone">
-  <!-- Ringtone audio file (must be in same directory) -->
-  <!-- playsinline helps on iOS; preload=auto to speed up -->
   <audio id="ringtone" src="ringtone.mp3" loop preload="auto" playsinline></audio>
 
   <div id="menu" class="screen active">
@@ -243,18 +241,14 @@ let stats = {};
 let currentPlayer = "";
 let lastPlayer = "";
 let lastQuestion = "";
-let selectedPlayers = []; // Track players selected in the current round
-let selectedQuestions = []; // Track questions selected in the current round
+let selectedPlayers = [];
+let selectedQuestions = [];
 
-// Audio variables & unlock helpers
 const ringtone = document.getElementById('ringtone');
 let audioUnlocked = false;
 let audioCtx = null;
 
-// Automatically try to unlock audio on page load
 window.addEventListener('load', tryUnlockAudio);
-
-// Fallback: Try to unlock audio on first user gesture (pointerdown)
 document.addEventListener('pointerdown', function unlockOnce(){
   tryUnlockAudio().finally(() => {
     document.removeEventListener('pointerdown', unlockOnce);
@@ -267,8 +261,6 @@ async function tryUnlockAudio() {
     if (audioCtx.state === 'suspended') {
       await audioCtx.resume();
     }
-
-    // Try silent buffer to unlock audio
     try {
       const buff = audioCtx.createBuffer(1, 1, 22050);
       const src = audioCtx.createBufferSource();
@@ -278,8 +270,6 @@ async function tryUnlockAudio() {
     } catch (silentErr) {
       console.warn('Silent buffer workaround failed:', silentErr);
     }
-
-    // Try to play the ringtone
     await ringtone.play();
     ringtone.pause();
     ringtone.currentTime = 0;
@@ -288,7 +278,6 @@ async function tryUnlockAudio() {
     return true;
   } catch (err) {
     console.warn('tryUnlockAudio: tentative échouée', err);
-    // Fallback to new Audio instance
     try {
       const a = new Audio('ringtone.mp3');
       a.playsInline = true;
@@ -311,6 +300,9 @@ function playRingtone() {
   ringtone.loop = true;
   ringtone.play().then(() => {
     audioUnlocked = true;
+    if ('vibrate' in navigator) {
+      navigator.vibrate([500, 200, 500, 200, 500]); // Vibration pattern: 500ms on, 200ms off, repeat
+    }
   }).catch(err => {
     console.warn('playRingtone failed:', err);
     alert("Le son n'a pas pu être activé. Appuyez n'importe où sur l'écran pour réessayer.");
@@ -322,12 +314,14 @@ function stopRingtone() {
   try {
     ringtone.pause();
     ringtone.currentTime = 0;
+    if ('vibrate' in navigator) {
+      navigator.vibrate(0); // Stop any ongoing vibration
+    }
   } catch (e) {
     console.warn('Erreur en stoppant la sonnerie', e);
   }
 }
 
-/* ---------- reste du code (jeu) ---------- */
 document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
 
 function addPlayer(){
@@ -359,7 +353,7 @@ function handleFileUpload(event) {
       try {
         questions = JSON.parse(e.target.result);
         usedQuestions = [];
-        selectedQuestions = []; // Reset selected questions when new questions are loaded
+        selectedQuestions = [];
         lastQuestion = "";
         document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
         alert("Questions chargées avec succès !");
@@ -412,7 +406,6 @@ function startGame(){
 
   players.forEach(p => stats[p] = stats[p] || {received: 0, answered: 0, shotsTaken: 0});
 
-  // Select player: exclude those already selected in this round
   let availablePlayers = players.filter(p => !selectedPlayers.includes(p));
   if (availablePlayers.length === 0) {
     availablePlayers = players;
@@ -421,7 +414,6 @@ function startGame(){
   const player = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
   selectedPlayers.push(player);
 
-  // Select question: exclude those already selected in this round and the last question
   let availableQuestions = questions.filter(q => !selectedQuestions.includes(q) && q !== lastQuestion);
   if (availableQuestions.length === 0) {
     availableQuestions = questions.filter(q => q !== lastQuestion);
