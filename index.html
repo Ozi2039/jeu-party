@@ -149,14 +149,6 @@
   .ask-jackson-screen {text-align:center; width:100%; max-width:280px;}
   .ask-jackson-screen textarea {min-height:100px; resize:vertical;}
 
-  /* bouton Activer son */
-  #enableSoundBtn {
-    display: inline-block; /* visible pour permettre au user de cliquer */
-    background:#ffd166;
-    color:#000;
-    font-weight:bold;
-  }
-
   @media (max-width: 480px) {
     .phone { 
       width: 100vw; 
@@ -196,10 +188,6 @@
     <div class="button-row">
       <button id="playBtn">🎮 Jouer</button>
       <button onclick="confirmEndGame()">🏁 Terminer</button>
-    </div>
-    <!-- Bouton pour débloquer l'audio si le navigateur le bloque -->
-    <div class="button-row">
-      <button id="enableSoundBtn" onclick="unlockAudio()">🔊 Activer son</button>
     </div>
   </div>
 
@@ -255,30 +243,32 @@ let stats = {};
 let currentPlayer = "";
 let lastPlayer = "";
 let lastQuestion = "";
+let selectedPlayers = []; // Track players selected in the current round
+let selectedQuestions = []; // Track questions selected in the current round
 
 // Audio variables & unlock helpers
 const ringtone = document.getElementById('ringtone');
 let audioUnlocked = false;
 let audioCtx = null;
 
-// Try to unlock audio on first user gesture (pointerdown) — useful on mobile
+// Automatically try to unlock audio on page load
+window.addEventListener('load', tryUnlockAudio);
+
+// Fallback: Try to unlock audio on first user gesture (pointerdown)
 document.addEventListener('pointerdown', function unlockOnce(){
-  // attempt quick unlock; remove listener afterward
-  tryUnlockAudio().finally(()=> {
+  tryUnlockAudio().finally(() => {
     document.removeEventListener('pointerdown', unlockOnce);
   });
 });
 
-async function tryUnlockAudio(){
-  const btn = document.getElementById('enableSoundBtn');
+async function tryUnlockAudio() {
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    // resume context (some browsers start in suspended state)
     if (audioCtx.state === 'suspended') {
       await audioCtx.resume();
     }
 
-    // play a tiny silent buffer to "unlock" audio on some platforms
+    // Try silent buffer to unlock audio
     try {
       const buff = audioCtx.createBuffer(1, 1, 22050);
       const src = audioCtx.createBufferSource();
@@ -286,20 +276,19 @@ async function tryUnlockAudio(){
       src.connect(audioCtx.destination);
       src.start(0);
     } catch (silentErr) {
-      console.warn('silent buffer workaround failed:', silentErr);
+      console.warn('Silent buffer workaround failed:', silentErr);
     }
 
-    // attempt to play the audio element (user gesture context)
+    // Try to play the ringtone
     await ringtone.play();
     ringtone.pause();
     ringtone.currentTime = 0;
     audioUnlocked = true;
-    if(btn) btn.style.display = 'none';
-    console.log('Audio débloqué via pointerdown');
+    console.log('Audio débloqué automatiquement');
     return true;
   } catch (err) {
     console.warn('tryUnlockAudio: tentative échouée', err);
-    // fallback attempt with a new Audio() instance (still under user gesture)
+    // Fallback to new Audio instance
     try {
       const a = new Audio('ringtone.mp3');
       a.playsInline = true;
@@ -307,62 +296,35 @@ async function tryUnlockAudio(){
       await a.play();
       a.pause();
       audioUnlocked = true;
-      if(btn) btn.style.display = 'none';
-      // try to play the main element but don't block
-      try { await ringtone.play(); ringtone.pause(); ringtone.currentTime = 0; } catch(e){}
       console.log('Audio débloqué via fallback Audio()');
       return true;
     } catch (err2) {
       console.error('tryUnlockAudio: fallback échoué', err2);
-      if(btn) btn.style.display = 'inline-block';
+      alert("Le son n'a pas pu être activé automatiquement. Appuyez n'importe où sur l'écran pour activer le son, ou assurez-vous que 'ringtone.mp3' existe.");
       return false;
     }
   }
 }
 
-async function unlockAudio() {
-  const btn = document.getElementById('enableSoundBtn');
-  try {
-    const ok = await tryUnlockAudio();
-    if(ok) {
-      if(btn) btn.style.display = 'none';
-      alert('Son activé ✓');
-    } else {
-      alert("Le navigateur bloque toujours la lecture audio. Essayez d'appuyer n'importe où sur l'écran, ou ouvrez la page via http://localhost (évitez file://).");
-    }
-  } catch(e){
-    console.error('unlockAudio error', e);
-    alert("Impossible d'activer le son : vérifiez la console et que 'ringtone.mp3' existe dans le même dossier.");
-  }
-}
-
-function playRingtone(){
-  if(!ringtone) return;
+function playRingtone() {
+  if (!ringtone) return;
   ringtone.loop = true;
-  // Si audio non débloqué, le bouton reste visible
-  if(!audioUnlocked){
-    const btn = document.getElementById('enableSoundBtn');
-    if(btn) btn.style.display = 'inline-block';
-  }
-  // Tenter la lecture (souvent autorisée si appelée après un clic utilisateur)
-  ringtone.play().then(()=> {
+  ringtone.play().then(() => {
     audioUnlocked = true;
-    const btn = document.getElementById('enableSoundBtn');
-    if(btn) btn.style.display = 'none';
   }).catch(err => {
     console.warn('playRingtone failed:', err);
-    // Laisser le bouton visible pour que l'utilisateur l'active manuellement
-    const btn = document.getElementById('enableSoundBtn');
-    if(btn) btn.style.display = 'inline-block';
+    alert("Le son n'a pas pu être activé. Appuyez n'importe où sur l'écran pour réessayer.");
   });
 }
 
-function stopRingtone(){
-  if(!ringtone) return;
-  try{
+function stopRingtone() {
+  if (!ringtone) return;
+  try {
     ringtone.pause();
     ringtone.currentTime = 0;
-  }catch(e){ console.warn('Erreur en stoppant la sonnerie', e); }
+  } catch (e) {
+    console.warn('Erreur en stoppant la sonnerie', e);
+  }
 }
 
 /* ---------- reste du code (jeu) ---------- */
@@ -384,6 +346,7 @@ function renderPlayers(){
 function removePlayer(i){
   delete stats[players[i]];
   if (players[i] === lastPlayer) lastPlayer = "";
+  selectedPlayers = selectedPlayers.filter(p => p !== players[i]);
   players.splice(i,1);
   renderPlayers();
 }
@@ -396,6 +359,7 @@ function handleFileUpload(event) {
       try {
         questions = JSON.parse(e.target.result);
         usedQuestions = [];
+        selectedQuestions = []; // Reset selected questions when new questions are loaded
         lastQuestion = "";
         document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
         alert("Questions chargées avec succès !");
@@ -448,19 +412,26 @@ function startGame(){
 
   players.forEach(p => stats[p] = stats[p] || {received: 0, answered: 0, shotsTaken: 0});
 
-  let availablePlayers = players.filter(p => p !== lastPlayer);
-  if (availablePlayers.length === 0) availablePlayers = players;
+  // Select player: exclude those already selected in this round
+  let availablePlayers = players.filter(p => !selectedPlayers.includes(p));
+  if (availablePlayers.length === 0) {
+    availablePlayers = players;
+    selectedPlayers = [];
+  }
   const player = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
+  selectedPlayers.push(player);
 
-  let availableQuestions = questions.filter(q => !usedQuestions.includes(q) && q !== lastQuestion);
+  // Select question: exclude those already selected in this round and the last question
+  let availableQuestions = questions.filter(q => !selectedQuestions.includes(q) && q !== lastQuestion);
   if (availableQuestions.length === 0) {
     availableQuestions = questions.filter(q => q !== lastQuestion);
-    usedQuestions = [];
+    selectedQuestions = [];
   }
   if (availableQuestions.length === 0) availableQuestions = questions;
   const question = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
-
+  selectedQuestions.push(question);
   if (!usedQuestions.includes(question)) usedQuestions.push(question);
+
   currentPlayer = player;
   lastPlayer = player;
   lastQuestion = question;
@@ -478,7 +449,6 @@ function startGame(){
 
   initSlider();
 
-  // Play ringtone. This call happens in response to user click on "Jouer" so should be allowed on most browsers.
   playRingtone();
 }
 
@@ -587,7 +557,6 @@ function initSlider(){
     if(isDragging){ 
       isDragging=false; 
       if(parseInt(btn.style.left) > maxSlideDistance * 0.9){ 
-        // stop ringtone when call is accepted
         stopRingtone();
         callScreen.classList.remove("active"); 
         questionScreen.classList.add("active"); 
@@ -612,7 +581,6 @@ function initSlider(){
     if(isDragging){ 
       isDragging=false; 
       if(parseInt(btn.style.left) > maxSlideDistance * 0.9){ 
-        // stop ringtone when call is accepted
         stopRingtone();
         callScreen.classList.remove("active"); 
         questionScreen.classList.add("active"); 
@@ -642,7 +610,7 @@ function isAppleDevice() {
 }
 window.addEventListener("load", () => {
   if (isAppleDevice()) {
-    alert("⚠️ Sur iPhone/iPad, le mode plein écran doit être activé manuellement. Si la sonnerie ne se lance pas, appuie sur 'Activer son' ou tape n'importe où sur l'écran.");
+    alert("⚠️ Sur iPhone/iPad, le mode plein écran doit être activé manuellement. Si la sonnerie ne se lance pas, tapez n'importe où sur l'écran.");
   }
 });
 </script>
