@@ -248,83 +248,79 @@ const ringtone = document.getElementById('ringtone');
 let audioUnlocked = false;
 let audioCtx = null;
 
-// Variable de contrôle des vibrations
-let vibrationIntervalId = null;
-let vibrationPattern = [400, 200]; // vibrate 400ms, pause 200ms
-let vibrationKeepAliveInterval = null;
+window.addEventListener('load', tryUnlockAudio);
+document.addEventListener('pointerdown', function unlockOnce(){
+  tryUnlockAudio().finally(() => {
+    document.removeEventListener('pointerdown', unlockOnce);
+  });
+});
 
-function startVibration() {
-  if (!('vibrate' in navigator)) return;
-  // Ne rien faire si déjà en train de gérer les vibrations
-  if (vibrationIntervalId) return;
-
+async function tryUnlockAudio() {
   try {
-    // déclenche immédiatement
-    navigator.vibrate(vibrationPattern);
-  } catch (e) {
-    console.warn('vibrate initial failed', e);
-    return;
-  }
-
-  // Certains navigateurs limitent la durée d'une seule vibration.
-  // On relance le pattern périodiquement tant que l'audio est en lecture.
-  const cycleDuration = vibrationPattern.reduce((a, b) => a + b, 0);
-  vibrationIntervalId = setInterval(() => {
-    try {
-      if (ringtone.paused || ringtone.ended) {
-        stopVibration();
-        return;
-      }
-      navigator.vibrate(vibrationPattern);
-    } catch (e) {
-      console.warn('vibrate repeat failed', e);
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') {
+      await audioCtx.resume();
     }
-  }, Math.max(200, cycleDuration - 50)); // relance juste avant la fin du cycle
-
-  // Garde-fou : ré-enclenche toutes les secondes au cas où le navigateur arrêterait silencieusement
-  vibrationKeepAliveInterval = setInterval(() => {
     try {
-      if (ringtone.paused || ringtone.ended) {
-        stopVibration();
-        return;
-      }
-      navigator.vibrate(vibrationPattern);
-    } catch (e) {
-      console.warn('vibrate keepalive failed', e);
+      const buff = audioCtx.createBuffer(1, 1, 22050);
+      const src = audioCtx.createBufferSource();
+      src.buffer = buff;
+      src.connect(audioCtx.destination);
+      src.start(0);
+    } catch (silentErr) {
+      console.warn('Silent buffer workaround failed:', silentErr);
     }
-  }, 1000);
-}
-
-function stopVibration() {
-  if (!('vibrate' in navigator)) return;
-  if (vibrationIntervalId) {
-    clearInterval(vibrationIntervalId);
-    vibrationIntervalId = null;
-  }
-  if (vibrationKeepAliveInterval) {
-    clearInterval(vibrationKeepAliveInterval);
-    vibrationKeepAliveInterval = null;
-  }
-  try {
-    // 0 arrête toute vibration en cours
-    navigator.vibrate(0);
-  } catch (e) {
-    console.warn('stop vibrate failed', e);
+    await ringtone.play();
+    ringtone.pause();
+    ringtone.currentTime = 0;
+    audioUnlocked = true;
+    console.log('Audio débloqué automatiquement');
+    return true;
+  } catch (err) {
+    console.warn('tryUnlockAudio: tentative échouée', err);
+    try {
+      const a = new Audio('ringtone.mp3');
+      a.playsInline = true;
+      a.loop = true;
+      await a.play();
+      a.pause();
+      audioUnlocked = true;
+      console.log('Audio débloqué via fallback Audio()');
+      return true;
+    } catch (err2) {
+      console.error('tryUnlockAudio: fallback échoué', err2);
+      alert("Le son n'a pas pu être activé automatiquement. Appuyez n'importe où sur l'écran pour activer le son, ou assurez-vous que 'ringtone.mp3' existe.");
+      return false;
+    }
   }
 }
 
-// S'assurer que si l'audio commence/termine/est mis en pause, les vibrations suivent
-ringtone.addEventListener('playing', () => {
-  startVibration();
-});
-ringtone.addEventListener('ended', () => {
-  stopVibration();
-});
-ringtone.addEventListener('pause', () => {
-  stopVibration();
-});
+function playRingtone() {
+  if (!ringtone) return;
+  ringtone.loop = true;
+  ringtone.play().then(() => {
+    audioUnlocked = true;
+    if ('vibrate' in navigator) {
+      navigator.vibrate(2000); // Continuous maximum vibration for 2000ms, will repeat due to loop in startGame
+    }
+  }).catch(err => {
+    console.warn('playRingtone failed:', err);
+    alert("Le son n'a pas pu être activé. Appuyez n'importe où sur l'écran pour réessayer.");
+  });
+}
 
-// --- reste du code inchangé (gestion joueurs, questions, UI) ---
+function stopRingtone() {
+  if (!ringtone) return;
+  try {
+    ringtone.pause();
+    ringtone.currentTime = 0;
+    if ('vibrate' in navigator) {
+      navigator.vibrate(0); // Stop any ongoing vibration
+    }
+  } catch (e) {
+    console.warn('Erreur en stoppant la sonnerie', e);
+  }
+}
 
 document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
 
