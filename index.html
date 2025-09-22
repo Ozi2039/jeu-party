@@ -247,6 +247,7 @@ let selectedQuestions = [];
 const ringtone = document.getElementById('ringtone');
 let audioUnlocked = false;
 let audioCtx = null;
+let vibrationInterval = null;
 
 window.addEventListener('load', tryUnlockAudio);
 document.addEventListener('pointerdown', function unlockOnce(){
@@ -295,14 +296,33 @@ async function tryUnlockAudio() {
   }
 }
 
+function startVibrationLoop() {
+  if ('vibrate' in navigator) {
+    // Start continuous vibration pattern: 1 second on, 0.1 second off, repeat
+    vibrationInterval = setInterval(() => {
+      navigator.vibrate([1000, 100]);
+    }, 1100);
+    // Initial vibration to start immediately
+    navigator.vibrate([1000, 100]);
+  }
+}
+
+function stopVibrationLoop() {
+  if (vibrationInterval) {
+    clearInterval(vibrationInterval);
+    vibrationInterval = null;
+  }
+  if ('vibrate' in navigator) {
+    navigator.vibrate(0); // Stop any ongoing vibration
+  }
+}
+
 function playRingtone() {
   if (!ringtone) return;
   ringtone.loop = true;
   ringtone.play().then(() => {
     audioUnlocked = true;
-    if ('vibrate' in navigator) {
-      navigator.vibrate(2000); // Continuous maximum vibration for 2000ms, will repeat due to loop in startGame
-    }
+    startVibrationLoop();
   }).catch(err => {
     console.warn('playRingtone failed:', err);
     alert("Le son n'a pas pu être activé. Appuyez n'importe où sur l'écran pour réessayer.");
@@ -314,9 +334,7 @@ function stopRingtone() {
   try {
     ringtone.pause();
     ringtone.currentTime = 0;
-    if ('vibrate' in navigator) {
-      navigator.vibrate(0); // Stop any ongoing vibration
-    }
+    stopVibrationLoop();
   } catch (e) {
     console.warn('Erreur en stoppant la sonnerie', e);
   }
@@ -607,4 +625,3 @@ window.addEventListener("load", () => {
 });
 </script>
 </body>
-</html>
