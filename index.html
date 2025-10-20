@@ -7,18 +7,20 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Vérité Party</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
   html, body {
-    margin:0;
-    padding:0;
-    height:100%;
-    width:100%;
-    font-family:sans-serif;
-    background:#0d1117;
-    color:white;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    overflow:hidden;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
     -webkit-user-select: none;
     user-select: none;
   }
@@ -26,31 +28,40 @@
   .phone {
     width: 320px;
     height: 600px;
-    border-radius: 36px;
+    border-radius: 40px;
     background: url('Zu1MKPS9.jpg') no-repeat center/cover;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
     padding: 20px;
-    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     position: relative;
     overflow: hidden;
-    transition: none;
+    transition: all 0.3s ease;
+    animation: subtlePulse 4s ease-in-out infinite;
+  }
+
+  @keyframes subtlePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
   }
 
   .phone::before {
     content: "";
     position: absolute;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background: rgba(0,0,0,0.5);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.4));
     z-index: 0;
-    border-radius: 36px;
+    border-radius: 40px;
   }
 
-  .phone > * { position: relative; z-index: 1; }
+  .phone > * { 
+    position: relative; 
+    z-index: 1; 
+  }
 
   .fullscreen {
     width: 100vw !important;
@@ -61,95 +72,162 @@
     margin: 0 !important;
   }
 
-  .screen {display:none; width:100%; flex-direction:column; align-items:center; justify-content:center;}
-  .active {display:flex;}
+  .screen {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s ease;
+  }
+
+  .active {
+    display: flex;
+    opacity: 1;
+  }
 
   button {
-    padding:10px 15px; 
-    margin:5px; 
-    border:none; 
-    border-radius:8px; 
-    cursor:pointer; 
-    background:#00d4ff; 
-    font-weight:bold; 
-    font-size:14px;
-    color:#000;
+    padding: 12px 20px;
+    margin: 8px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: linear-gradient(45deg, #00d4ff, #7b00ff);
+    font-weight: 600;
+    font-size: 16px;
+    color: #fff;
     flex: 1;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 212, 255, 0.5);
   }
 
   .button-row {
     display: flex;
     justify-content: center;
     width: 100%;
-    max-width: 280px;
+    max-width: 300px;
+    gap: 10px;
   }
 
   input, textarea {
-    padding:8px; 
-    margin:5px; 
-    border-radius:6px; 
-    border:none; 
-    width:100%;
-    background: rgba(255,255,255,0.8);
-    color: #000;
+    padding: 12px;
+    margin: 8px;
+    border-radius: 10px;
+    border: none;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    color: #1a1a2e;
+    font-size: 14px;
+    font-family: 'Poppins', sans-serif;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background 0.3s ease;
+  }
+
+  input:focus, textarea:focus {
+    background: #ffffff;
+    outline: none;
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
   }
 
   .players-list {
-    margin:3px 0;
-    max-height: 100px;
+    margin: 8px 0;
+    max-height: 120px;
     overflow-y: auto;
     width: 100%;
-    max-width: 280px;
+    max-width: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 10px;
   }
 
-  .call-box {text-align:center; width: 100%;}
-  .caller {font-size:20px; margin-bottom:20px;}
+  .players-list div {
+    padding: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .call-box {
+    text-align: center;
+    width: 100%;
+  }
+
+  .caller {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 25px;
+    color: #00d4ff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
   .slide-container {
     position: relative;
     width: calc(100% - 20px);
-    height: 60px;
-    background: rgba(0,0,0,0.6);
-    border-radius: 30px;
+    height: 70px;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
+    border-radius: 35px;
     overflow: hidden;
     margin: 0 10px;
-  }
-  .slide-btn {
-    position: absolute;
-    top:5px;
-    left:5px;
-    width:50px;
-    height:50px;
-    background:#00ff88;
-    border-radius:50%;
-    cursor:grab;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    user-select: none;
-    touch-action: none;
-  }
-  .question {
-    font-size:20px;
-    max-width:280px;
-    padding:20px;
-    background: rgba(0,0,0,0.7);
-    border-radius:12px;
-    margin:20px;
-    text-align:center;
-  }
-  .question-prompt {
-    font-size:16px;
-    color:#ccc;
-    margin-bottom:10px;
-    text-align:center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
   }
 
-  .slide-text {text-align:center; margin-top:10px; font-size:14px; color:#ccc;}
+  .slide-btn {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(45deg, #00ff88, #00d4ff);
+    border-radius: 50%;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    user-select: none;
+    touch-action: none;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.6);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .slide-btn:active {
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
+  }
+
+  .question {
+    font-size: 22px;
+    font-weight: 600;
+    max-width: 300px;
+    padding: 25px;
+    background: rgba(0, 0, 0, 0.75);
+    border-radius: 15px;
+    margin: 20px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  }
+
+  .question-prompt {
+    font-size: 18px;
+    color: #e0e0e0;
+    margin-bottom: 15px;
+    text-align: center;
+  }
+
+  .slide-text {
+    text-align: center;
+    margin-top: 12px;
+    font-size: 16px;
+    color: #b0b0b0;
+    font-weight: 500;
+  }
+
   .ask-jackson-screen {
-    text-align:center;
-    width:100%;
-    max-width:280px;
+    text-align: center;
+    width: 100%;
+    max-width: 300px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -157,27 +235,38 @@
     padding: 20px;
     box-sizing: border-box;
   }
+
   .ask-jackson-screen textarea {
-    min-height:100px;
-    resize:vertical;
-    margin-bottom: 10px;
+    min-height: 120px;
+    resize: vertical;
+    margin-bottom: 15px;
+  }
+
+  h1, h2, h3 {
+    color: #00d4ff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    margin: 15px 0;
   }
 
   @media (max-width: 480px) {
     .phone { 
       width: 100vw; 
       height: calc(var(--vh, 1vh) * 100); 
-      border-radius:0; 
+      border-radius: 0; 
       box-shadow: none;
     }
-    .phone::before { border-radius:0; }
-    .question { max-width: calc(100% - 40px); }
+    .phone::before { 
+      border-radius: 0; 
+    }
+    .question { 
+      max-width: calc(100% - 40px); 
+    }
     .slide-container {
       width: calc(100% - 20px);
       margin: 0 10px;
     }
     .ask-jackson-screen {
-      padding-bottom: 150px; /* Extra padding to account for keyboard */
+      padding-bottom: 150px;
     }
   }
 </style>
