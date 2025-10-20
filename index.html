@@ -35,7 +35,6 @@
     box-shadow: 0 0 40px rgba(0,0,0,0.5);
     position: relative;
     overflow: hidden;
-    /* transition removed to make background-image changes instant (no animation) */
     transition: none;
   }
 
@@ -147,8 +146,22 @@
   }
 
   .slide-text {text-align:center; margin-top:10px; font-size:14px; color:#ccc;}
-  .ask-jackson-screen {text-align:center; width:100%; max-width:280px;}
-  .ask-jackson-screen textarea {min-height:100px; resize:vertical;}
+  .ask-jackson-screen {
+    text-align:center;
+    width:100%;
+    max-width:280px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  .ask-jackson-screen textarea {
+    min-height:100px;
+    resize:vertical;
+    margin-bottom: 10px;
+  }
 
   @media (max-width: 480px) {
     .phone { 
@@ -163,6 +176,9 @@
       width: calc(100% - 20px);
       margin: 0 10px;
     }
+    .ask-jackson-screen {
+      padding-bottom: 150px; /* Extra padding to account for keyboard */
+    }
   }
 </style>
 </head>
@@ -172,7 +188,7 @@
   <audio id="ringtone" loop preload="auto" playsinline></audio>
 
   <div id="menu" class="screen active">
-    <h1>Le jeux de Toutle🌎</h1>
+    <h1>Le jeu de Toutle🌎</h1>
     <button onclick="toggleFullScreen()">📱 Plein écran</button>
     <h3>Liste des joueurs</h3>
     <div id="playersList" class="players-list"></div>
@@ -250,7 +266,6 @@ let audioUnlocked = false;
 let audioCtx = null;
 let vibrationInterval = null;
 
-// Mapping of name -> ringtone audio and background image
 const ringtoneImageMap = [
   { name: 'Jackson', audio: 'audio1.mp3', image: 'image1.jpg' },
   { name: 'Eddy Malou', audio: 'audio2.mp3', image: 'image2.jpg' },
@@ -264,11 +279,9 @@ const ringtoneImageMap = [
   { name: 'ton chauffeur Uber', audio: 'audio10.mp3', image: 'image10.jpg' },
   { name: 'Adams le castor', audio: 'audio11.mp3', image: 'image11.jpg' },
   { name: 'Annie', audio: 'audio12.mp3', image: 'image12.jpg' }
-
-
 ];
 
-let currentCallerEntry = null; // object from ringtoneImageMap
+let currentCallerEntry = null;
 let currentCallerName = '';
 
 window.addEventListener('load', tryUnlockAudio);
@@ -294,15 +307,12 @@ async function tryUnlockAudio() {
       console.warn('Silent buffer workaround failed:', silentErr);
     }
 
-    // choose a caller entry (this links name/audio/image)
     chooseCallerEntry();
-
     await ringtone.play().catch(()=>{});
     ringtone.pause();
     ringtone.currentTime = 0;
     audioUnlocked = true;
     console.log('Audio débloqué automatiquement');
-    // Reset to default image for menu screen (instant)
     document.getElementById('phone').style.backgroundImage = `url('Zu1MKPS9.jpg')`;
     return true;
   } catch (err) {
@@ -317,7 +327,6 @@ async function tryUnlockAudio() {
       a.pause();
       audioUnlocked = true;
       console.log('Audio débloqué via fallback Audio()');
-      // Reset to default image for menu screen (instant)
       document.getElementById('phone').style.backgroundImage = `url('Zu1MKPS9.jpg')`;
       return true;
     } catch (err2) {
@@ -348,20 +357,16 @@ function stopVibrationLoop() {
 }
 
 function chooseCallerEntry(){
-  // pick a random entry and link name/audio/image to current caller
   const entry = ringtoneImageMap[Math.floor(Math.random() * ringtoneImageMap.length)];
   currentCallerEntry = entry;
   currentCallerName = entry.name;
   ringtone.src = entry.audio;
-  // set background instantly (no animation)
   document.getElementById('phone').style.backgroundImage = `url('${entry.image}')`;
 }
 
 function playRingtone() {
   if (!ringtone) return;
-  // ensure a caller entry is selected (links name/audio/image)
   if (!currentCallerEntry) chooseCallerEntry();
-  // ensure background reflects current caller entry (instant)
   document.getElementById('phone').style.backgroundImage = `url('${currentCallerEntry.image}')`;
   ringtone.loop = true;
   ringtone.play().then(() => {
@@ -491,9 +496,7 @@ function startGame(){
   lastQuestion = question;
   stats[player].received++;
 
-  // choose caller entry (name/audio/image) for this call
   chooseCallerEntry();
-
   callerName.textContent = `Yo ${player}, ${currentCallerName} t'appelle !`;
   questionPrompt.textContent = "Répond à la question ou prend un shot :";
   questionText.textContent = question;
@@ -505,7 +508,6 @@ function startGame(){
   document.querySelectorAll('#menu .button-row').forEach(el => el.style.display='flex');
 
   initSlider();
-
   playRingtone();
 }
 
@@ -525,7 +527,6 @@ function showAskJacksonScreen(){
   questionScreen.classList.remove("active");
   askJacksonScreen.classList.add("active");
   document.getElementById("newQuestionInput").value = "";
-  // update header to use the caller's name linked to the audio/image
   const askHeader = document.getElementById('askHeader');
   askHeader.textContent = `Pose une question à ${currentCallerName}`;
 }
@@ -674,6 +675,21 @@ window.addEventListener("load", () => {
   if (isAppleDevice()) {
     alert("⚠️ Sur iPhone/iPad, le mode plein écran doit être activé manuellement. Si la sonnerie ne se lance pas, tapez n'importe où sur l'écran.");
   }
+});
+
+// Ensure textarea is visible when keyboard appears
+document.getElementById("newQuestionInput").addEventListener("focus", function() {
+  setTimeout(() => {
+    this.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Adjust the container to ensure buttons are visible
+    const askJacksonScreen = document.querySelector('.ask-jackson-screen');
+    askJacksonScreen.style.paddingBottom = '200px'; // Increase padding when focused
+  }, 300); // Delay to account for keyboard animation
+});
+
+document.getElementById("newQuestionInput").addEventListener("blur", function() {
+  const askJacksonScreen = document.querySelector('.ask-jackson-screen');
+  askJacksonScreen.style.paddingBottom = '20px'; // Reset padding when focus is lost
 });
 </script>
 </body>
