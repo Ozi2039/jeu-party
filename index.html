@@ -35,7 +35,8 @@
     box-shadow: 0 0 40px rgba(0,0,0,0.5);
     position: relative;
     overflow: hidden;
-    transition: all 0.3s ease;
+    /* transition removed to make background-image changes instant (no animation) */
+    transition: none;
   }
 
   .phone::before {
@@ -168,7 +169,7 @@
 <body>
 
 <div class="phone" id="phone">
-  <audio id="ringtone" src="ringtone.mp3" loop preload="auto" playsinline></audio>
+  <audio id="ringtone" loop preload="auto" playsinline></audio>
 
   <div id="menu" class="screen active">
     <h1>Jackson le goat</h1>
@@ -214,8 +215,8 @@
 
   <div id="askJacksonScreen" class="screen">
     <div class="ask-jackson-screen">
-      <h2>Pose une question à Jackson</h2>
-      <textarea id="newQuestionInput" placeholder="Ta question pour Jackson..."></textarea>
+      <h2 id="askHeader">Pose une question à Jackson</h2>
+      <textarea id="newQuestionInput" placeholder="Ta question..."></textarea>
       <div class="button-row">
         <button onclick="submitNewQuestion()">📤 Envoyer</button>
         <button onclick="skipNewQuestion()">➡️ Passer</button>
@@ -249,6 +250,27 @@ let audioUnlocked = false;
 let audioCtx = null;
 let vibrationInterval = null;
 
+// Mapping of name -> ringtone audio and background image
+const ringtoneImageMap = [
+  { name: 'Jackson', audio: 'audio1.mp3', image: 'image1.jpg' },
+  { name: 'Eddy Malou', audio: 'audio2.mp3', image: 'image2.jpg' },
+  { name: 'Ok Garmin', audio: 'audio3.mp3', image: 'image3.jpg' },
+  { name: 'Docteur sensuel Douglasss', audio: 'audio4.mp3', image: 'image4.jpg' },
+  { name: 'Carlos Sainz Jr', audio: 'audio5.mp3', image: 'image5.jpg' },
+  { name: 'Charles Tisseyre', audio: 'audio6.mp3', image: 'image6.jpg' },
+  { name: 'Aquaman', audio: 'audio7.mp3', image: 'image7.jpg' },
+  { name: 'Buzzman', audio: 'audio8.mp3', image: 'image8.jpg' },
+  { name: 'Eggman', audio: 'audio9.mp3', image: 'image9.jpg' },
+  { name: 'ton chauffeur Uber', audio: 'audio10.mp3', image: 'image10.jpg' },
+  { name: 'Adams le castor', audio: 'audio11.mp3', image: 'image11.jpg' },
+  { name: 'Annie', audio: 'audio12.mp3', image: 'image12.jpg' }
+
+
+];
+
+let currentCallerEntry = null; // object from ringtoneImageMap
+let currentCallerName = '';
+
 window.addEventListener('load', tryUnlockAudio);
 document.addEventListener('pointerdown', function unlockOnce(){
   tryUnlockAudio().finally(() => {
@@ -271,26 +293,36 @@ async function tryUnlockAudio() {
     } catch (silentErr) {
       console.warn('Silent buffer workaround failed:', silentErr);
     }
-    await ringtone.play();
+
+    // choose a caller entry (this links name/audio/image)
+    chooseCallerEntry();
+
+    await ringtone.play().catch(()=>{});
     ringtone.pause();
     ringtone.currentTime = 0;
     audioUnlocked = true;
     console.log('Audio débloqué automatiquement');
+    // Reset to default image for menu screen (instant)
+    document.getElementById('phone').style.backgroundImage = `url('Zu1MKPS9.jpg')`;
     return true;
   } catch (err) {
     console.warn('tryUnlockAudio: tentative échouée', err);
     try {
-      const a = new Audio('ringtone.mp3');
+      chooseCallerEntry();
+      const a = new Audio(currentCallerEntry.audio);
+      document.getElementById('phone').style.backgroundImage = `url('${currentCallerEntry.image}')`;
       a.playsInline = true;
       a.loop = true;
       await a.play();
       a.pause();
       audioUnlocked = true;
       console.log('Audio débloqué via fallback Audio()');
+      // Reset to default image for menu screen (instant)
+      document.getElementById('phone').style.backgroundImage = `url('Zu1MKPS9.jpg')`;
       return true;
     } catch (err2) {
       console.error('tryUnlockAudio: fallback échoué', err2);
-      alert("Le son n'a pas pu être activé automatiquement. Appuyez n'importe où sur l'écran pour activer le son, ou assurez-vous que 'ringtone.mp3' existe.");
+      alert("Le son n'a pas pu être activé automatiquement. Appuyez n'importe où sur l'écran pour activer le son, ou assurez-vous que les fichiers audio et images existent.");
       return false;
     }
   }
@@ -298,11 +330,9 @@ async function tryUnlockAudio() {
 
 function startVibrationLoop() {
   if ('vibrate' in navigator) {
-    // Start continuous vibration pattern: 1 second on, 0.1 second off, repeat
     vibrationInterval = setInterval(() => {
       navigator.vibrate([1000, 100]);
     }, 1100);
-    // Initial vibration to start immediately
     navigator.vibrate([1000, 100]);
   }
 }
@@ -313,12 +343,26 @@ function stopVibrationLoop() {
     vibrationInterval = null;
   }
   if ('vibrate' in navigator) {
-    navigator.vibrate(0); // Stop any ongoing vibration
+    navigator.vibrate(0);
   }
+}
+
+function chooseCallerEntry(){
+  // pick a random entry and link name/audio/image to current caller
+  const entry = ringtoneImageMap[Math.floor(Math.random() * ringtoneImageMap.length)];
+  currentCallerEntry = entry;
+  currentCallerName = entry.name;
+  ringtone.src = entry.audio;
+  // set background instantly (no animation)
+  document.getElementById('phone').style.backgroundImage = `url('${entry.image}')`;
 }
 
 function playRingtone() {
   if (!ringtone) return;
+  // ensure a caller entry is selected (links name/audio/image)
+  if (!currentCallerEntry) chooseCallerEntry();
+  // ensure background reflects current caller entry (instant)
+  document.getElementById('phone').style.backgroundImage = `url('${currentCallerEntry.image}')`;
   ringtone.loop = true;
   ringtone.play().then(() => {
     audioUnlocked = true;
@@ -447,7 +491,10 @@ function startGame(){
   lastQuestion = question;
   stats[player].received++;
 
-  callerName.textContent = `📞 Yo ${player}, Jackson t'appelle !`;
+  // choose caller entry (name/audio/image) for this call
+  chooseCallerEntry();
+
+  callerName.textContent = `Yo ${player}, ${currentCallerName} t'appelle !`;
   questionPrompt.textContent = "Répond à la question ou prend un shot :";
   questionText.textContent = question;
 
@@ -478,6 +525,9 @@ function showAskJacksonScreen(){
   questionScreen.classList.remove("active");
   askJacksonScreen.classList.add("active");
   document.getElementById("newQuestionInput").value = "";
+  // update header to use the caller's name linked to the audio/image
+  const askHeader = document.getElementById('askHeader');
+  askHeader.textContent = `Pose une question à ${currentCallerName}`;
 }
 
 function submitNewQuestion(){
@@ -509,6 +559,7 @@ function backToMenu(){
   menu.classList.add("active");
   document.querySelectorAll('#menu input, #menu textarea, #menu button').forEach(el => el.style.display='block');
   document.querySelectorAll('#menu .button-row').forEach(el => el.style.display='flex');
+  document.getElementById('phone').style.backgroundImage = `url('Zu1MKPS9.jpg')`;
 }
 
 function confirmEndGame(){
@@ -530,6 +581,7 @@ function endGameToMenu(){
   menu.classList.add("active");
   document.querySelectorAll('#menu input, #menu textarea, #menu button').forEach(el => el.style.display='block');
   document.querySelectorAll('#menu .button-row').forEach(el => el.style.display='flex');
+  document.getElementById('phone').style.backgroundImage = `url('Zu1MKPS9.jpg')`;
 }
 
 function renderStats(){
@@ -625,3 +677,4 @@ window.addEventListener("load", () => {
 });
 </script>
 </body>
+</html>
