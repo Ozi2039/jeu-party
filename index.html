@@ -22,7 +22,6 @@
     -webkit-user-select: none;
     user-select: none;
   }
-
   .phone {
     width: 320px;
     height: 600px;
@@ -37,7 +36,6 @@
     overflow: hidden;
     transition: none;
   }
-
   .phone::before {
     content: "";
     position: absolute;
@@ -49,9 +47,7 @@
     z-index: 0;
     border-radius: 36px;
   }
-
   .phone > * { position: relative; z-index: 1; }
-
   .fullscreen {
     width: 100vw !important;
     height: calc(var(--vh, 1vh) * 100) !important;
@@ -60,40 +56,40 @@
     padding: 0 !important;
     margin: 0 !important;
   }
-
   .screen {display:none; width:100%; flex-direction:column; align-items:center; justify-content:center;}
   .active {display:flex;}
-
   button {
-    padding:10px 15px; 
-    margin:5px; 
-    border:none; 
-    border-radius:8px; 
-    cursor:pointer; 
-    background:#00d4ff; 
-    font-weight:bold; 
+    padding:10px 15px;
+    margin:5px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    background:#00d4ff;
+    font-weight:bold;
     font-size:14px;
     color:#000;
     flex: 1;
   }
-
+  /* button small variant to avoid full flex for single centered buttons */
+  button.small {
+    flex: 0 0 auto;
+    padding:8px 12px;
+  }
   .button-row {
     display: flex;
     justify-content: center;
     width: 100%;
     max-width: 280px;
   }
-
   input, textarea {
-    padding:8px; 
-    margin:5px; 
-    border-radius:6px; 
-    border:none; 
+    padding:8px;
+    margin:5px;
+    border-radius:6px;
+    border:none;
     width:100%;
     background: rgba(255,255,255,0.8);
     color: #000;
   }
-
   .players-list {
     margin:3px 0;
     max-height: 100px;
@@ -101,7 +97,6 @@
     width: 100%;
     max-width: 280px;
   }
-
   .call-box {text-align:center; width: 100%;}
   .caller {font-size:20px; margin-bottom:20px;}
   .slide-container {
@@ -144,7 +139,6 @@
     margin-bottom:10px;
     text-align:center;
   }
-
   .slide-text {text-align:center; margin-top:10px; font-size:14px; color:#ccc;}
   .ask-jackson-screen {
     text-align:center;
@@ -162,12 +156,11 @@
     resize:vertical;
     margin-bottom: 10px;
   }
-
   @media (max-width: 480px) {
-    .phone { 
-      width: 100vw; 
-      height: calc(var(--vh, 1vh) * 100); 
-      border-radius:0; 
+    .phone {
+      width: 100vw;
+      height: calc(var(--vh, 1vh) * 100);
+      border-radius:0;
       box-shadow: none;
     }
     .phone::before { border-radius:0; }
@@ -183,29 +176,31 @@
 </style>
 </head>
 <body>
-
 <div class="phone" id="phone">
   <audio id="ringtone" loop preload="auto" playsinline></audio>
-
   <div id="menu" class="screen active">
     <h1>Le jeu de Toutle🌎</h1>
-    <button onclick="toggleFullScreen()">📱 Plein écran</button>
     <h3>Liste des joueurs</h3>
     <div id="playersList" class="players-list"></div>
     <input type="text" id="playerInput" placeholder="Nom du joueur">
     <button onclick="addPlayer()">Ajouter joueur</button>
-
-    <h3>Importer Questions (JSON)</h3>
+    <h3>Importer Questions par défaut (JSON)</h3>
     <input type="file" id="questionsFile" accept=".json">
     <textarea id="questionsInput" rows="5" cols="30" readonly></textarea><br>
-
     <br><br>
     <div class="button-row">
       <button id="playBtn">🎮 Jouer</button>
       <button onclick="confirmEndGame()">🏁 Terminer</button>
     </div>
+    <div class="button-row">
+      <button onclick="resetUsedQuestions()">🔁 Réinitialiser questions</button>
+      <button onclick="downloadDefaultQuestions()">⬇️ Télécharger questions</button>
+    </div>
+    <!-- Plein écran placé sous les boutons Réinitialiser / Télécharger -->
+    <div class="button-row">
+      <button onclick="toggleFullScreen()" id="fullscreenBtn" class="small">📱 Plein écran</button>
+    </div>
   </div>
-
   <div id="callScreen" class="screen">
     <div class="call-box">
       <div class="caller" id="callerName"></div>
@@ -215,7 +210,6 @@
       <div class="slide-text">→ Glisse pour décrocher</div>
     </div>
   </div>
-
   <div id="questionScreen" class="screen">
     <div class="question-prompt" id="questionPrompt"></div>
     <div class="question" id="questionText"></div>
@@ -228,7 +222,6 @@
       <button onclick="confirmEndGame()">🏁 Terminer</button>
     </div>
   </div>
-
   <div id="askJacksonScreen" class="screen">
     <div class="ask-jackson-screen">
       <h2 id="askHeader">Pose une question à Jackson</h2>
@@ -239,20 +232,18 @@
       </div>
     </div>
   </div>
-
   <div id="statsScreen" class="screen">
     <h2>📊 Stats de la partie</h2>
     <div id="statsList"></div>
     <div class="button-row">
       <button onclick="endGameToMenu()">🏠 Retour au Menu</button>
-      <button onclick="downloadQuestions()">⬇️ Télécharger Questions</button>
+      <button onclick="downloadDefaultQuestions()">⬇️ Télécharger Questions par défaut</button>
     </div>
   </div>
 </div>
-
 <script>
 let players = [];
-let questions = [];
+let questions = []; // questions par défaut + ajoutées
 let usedQuestions = [];
 let stats = {};
 let currentPlayer = "";
@@ -260,12 +251,12 @@ let lastPlayer = "";
 let lastQuestion = "";
 let selectedPlayers = [];
 let selectedQuestions = [];
-
+const LOCAL_KEY_DEFAULT = 'vp_defaultQuestions_v1';
+const LOCAL_KEY_USED = 'vp_usedQuestions_v1';
 const ringtone = document.getElementById('ringtone');
 let audioUnlocked = false;
 let audioCtx = null;
 let vibrationInterval = null;
-
 const ringtoneImageMap = [
   { name: 'Jackson', audio: 'audio1.mp3', image: 'image1.jpg' },
   { name: 'Eddy Malou', audio: 'audio2.mp3', image: 'image2.jpg' },
@@ -280,17 +271,17 @@ const ringtoneImageMap = [
   { name: 'Adams le castor', audio: 'audio11.mp3', image: 'image11.jpg' },
   { name: 'Annie', audio: 'audio12.mp3', image: 'image12.jpg' }
 ];
-
 let currentCallerEntry = null;
 let currentCallerName = '';
-
-window.addEventListener('load', tryUnlockAudio);
+window.addEventListener('load', () => {
+  tryUnlockAudio();
+  loadDefaultQuestions();
+});
 document.addEventListener('pointerdown', function unlockOnce(){
   tryUnlockAudio().finally(() => {
     document.removeEventListener('pointerdown', unlockOnce);
   });
 });
-
 async function tryUnlockAudio() {
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
@@ -306,7 +297,6 @@ async function tryUnlockAudio() {
     } catch (silentErr) {
       console.warn('Silent buffer workaround failed:', silentErr);
     }
-
     chooseCallerEntry();
     await ringtone.play().catch(()=>{});
     ringtone.pause();
@@ -331,12 +321,11 @@ async function tryUnlockAudio() {
       return true;
     } catch (err2) {
       console.error('tryUnlockAudio: fallback échoué', err2);
-      alert("Le son n'a pas pu être activé automatiquement. Appuyez n'importe où sur l'écran pour activer le son, ou assurez-vous que les fichiers audio et images existent.");
+      // Keep silent and let user tap to enable audio
       return false;
     }
   }
 }
-
 function startVibrationLoop() {
   if ('vibrate' in navigator) {
     vibrationInterval = setInterval(() => {
@@ -345,7 +334,6 @@ function startVibrationLoop() {
     navigator.vibrate([1000, 100]);
   }
 }
-
 function stopVibrationLoop() {
   if (vibrationInterval) {
     clearInterval(vibrationInterval);
@@ -355,7 +343,6 @@ function stopVibrationLoop() {
     navigator.vibrate(0);
   }
 }
-
 function chooseCallerEntry(){
   const entry = ringtoneImageMap[Math.floor(Math.random() * ringtoneImageMap.length)];
   currentCallerEntry = entry;
@@ -363,7 +350,6 @@ function chooseCallerEntry(){
   ringtone.src = entry.audio;
   document.getElementById('phone').style.backgroundImage = `url('${entry.image}')`;
 }
-
 function playRingtone() {
   if (!ringtone) return;
   if (!currentCallerEntry) chooseCallerEntry();
@@ -374,10 +360,8 @@ function playRingtone() {
     startVibrationLoop();
   }).catch(err => {
     console.warn('playRingtone failed:', err);
-    alert("Le son n'a pas pu être activé. Appuyez n'importe où sur l'écran pour réessayer.");
   });
 }
-
 function stopRingtone() {
   if (!ringtone) return;
   try {
@@ -388,9 +372,86 @@ function stopRingtone() {
     console.warn('Erreur en stoppant la sonnerie', e);
   }
 }
-
-document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
-
+function saveDefaultQuestions() {
+  try {
+    localStorage.setItem(LOCAL_KEY_DEFAULT, JSON.stringify(questions));
+  } catch (e) { console.warn('saveDefaultQuestions failed', e); }
+}
+function saveUsedQuestions() {
+  try {
+    localStorage.setItem(LOCAL_KEY_USED, JSON.stringify(usedQuestions));
+  } catch (e) { console.warn('saveUsedQuestions failed', e); }
+}
+async function loadDefaultQuestions() {
+  // Priority: if localStorage has a non-empty array then use it.
+  // Otherwise try to fetch questions.json bundled with the app.
+  try {
+    const stored = localStorage.getItem(LOCAL_KEY_DEFAULT);
+    if (stored) {
+      try {
+        const parsedStored = JSON.parse(stored);
+        if (Array.isArray(parsedStored) && parsedStored.length > 0) {
+          questions = parsedStored.slice();
+        } else {
+          // treat empty array in localStorage as "no user-added questions"
+          // fall through to fetching bundled questions.json
+          const resp = await fetch('questions.json').catch(() => null);
+          if (resp && resp.ok) {
+            const data = await resp.json();
+            questions = Array.isArray(data) ? data : [];
+            // persist fetched defaults so next load uses them unless user replaces
+            saveDefaultQuestions();
+          } else {
+            questions = [];
+          }
+        }
+      } catch (e) {
+        // corrupted localStorage entry, fall back to bundled file
+        const resp = await fetch('questions.json').catch(() => null);
+        if (resp && resp.ok) {
+          const data = await resp.json();
+          questions = Array.isArray(data) ? data : [];
+          saveDefaultQuestions();
+        } else {
+          questions = [];
+        }
+      }
+    } else {
+      // no localStorage entry, try to fetch bundled questions.json
+      try {
+        const resp = await fetch('questions.json');
+        if (resp.ok) {
+          const data = await resp.json();
+          questions = Array.isArray(data) ? data : [];
+          saveDefaultQuestions();
+        } else {
+          questions = [];
+        }
+      } catch (e) {
+        questions = [];
+      }
+    }
+  } catch (e) {
+    console.warn('loadDefaultQuestions parse failed', e);
+    questions = [];
+  }
+  // load used questions
+  try {
+    const used = localStorage.getItem(LOCAL_KEY_USED);
+    usedQuestions = used ? JSON.parse(used) : [];
+    usedQuestions = Array.isArray(usedQuestions) ? usedQuestions : [];
+    // remove used entries that no longer exist
+    usedQuestions = usedQuestions.filter(q => questions.includes(q));
+    saveUsedQuestions();
+  } catch (e) { usedQuestions = []; }
+  document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
+}
+function resetUsedQuestions(){
+  if (!confirm('Réinitialiser la liste des questions déjà utilisées ?')) return;
+  usedQuestions = [];
+  saveUsedQuestions();
+  alert('Liste des questions utilisées réinitialisée.');
+}
 function addPlayer(){
   const name = document.getElementById("playerInput").value.trim();
   if(name){
@@ -411,21 +472,22 @@ function removePlayer(i){
   players.splice(i,1);
   renderPlayers();
 }
-
 function handleFileUpload(event) {
   const file = event.target.files[0];
   if (file) {
     const reader = new FileReader();
     reader.onload = function(e) {
       try {
-        questions = JSON.parse(e.target.result);
+        const parsed = JSON.parse(e.target.result);
+        if (!Array.isArray(parsed)) throw new Error('Le JSON doit être un tableau de chaînes.');
+        questions = parsed.slice();
         usedQuestions = [];
-        selectedQuestions = [];
-        lastQuestion = "";
+        saveDefaultQuestions();
+        saveUsedQuestions();
         document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
-        alert("Questions chargées avec succès !");
+        alert("Questions par défaut importées avec succès. Les questions utilisées ont été réinitialisées.");
       } catch (e) {
-        alert("Erreur : Fichier JSON invalide !");
+        alert("Erreur : Fichier JSON invalide ou format incorrect. Il doit contenir un tableau.");
       }
     };
     reader.readAsText(file);
@@ -433,9 +495,7 @@ function handleFileUpload(event) {
     alert("Veuillez sélectionner un fichier JSON valide !");
   }
 }
-
 document.getElementById("questionsFile").addEventListener("change", handleFileUpload);
-
 const menu = document.getElementById("menu");
 const callScreen = document.getElementById("callScreen");
 const questionScreen = document.getElementById("questionScreen");
@@ -445,9 +505,7 @@ const callerName = document.getElementById("callerName");
 const questionText = document.getElementById("questionText");
 const questionPrompt = document.getElementById("questionPrompt");
 const phone = document.getElementById("phone");
-
 document.getElementById("playBtn").addEventListener("click", startGame);
-
 function toggleFullScreen() {
   if (!document.fullscreenElement) {
     const docEl = document.documentElement;
@@ -466,13 +524,10 @@ function toggleFullScreen() {
     phone.classList.remove('fullscreen');
   }
 }
-
 function startGame(){
   if(players.length===0){ alert("Ajoute au moins un joueur !"); return; }
-  if(questions.length===0){ alert("Veuillez importer un fichier de questions JSON !"); return; }
-
+  if(questions.length===0){ alert("Veuillez importer ou fournir un fichier de questions JSON par défaut !"); return; }
   players.forEach(p => stats[p] = stats[p] || {received: 0, answered: 0, shotsTaken: 0});
-
   let availablePlayers = players.filter(p => !selectedPlayers.includes(p));
   if (availablePlayers.length === 0) {
     availablePlayers = players;
@@ -480,49 +535,47 @@ function startGame(){
   }
   const player = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
   selectedPlayers.push(player);
-
-  let availableQuestions = questions.filter(q => !selectedQuestions.includes(q) && q !== lastQuestion);
+  // build availableQuestions by excluding usedQuestions (persistées)
+  let availableQuestions = questions.filter(q => !usedQuestions.includes(q) && q !== lastQuestion);
   if (availableQuestions.length === 0) {
+    // si toutes ont été utilisées, on remet à zéro usedQuestions puis recommence
+    usedQuestions = [];
+    saveUsedQuestions();
     availableQuestions = questions.filter(q => q !== lastQuestion);
-    selectedQuestions = [];
   }
   if (availableQuestions.length === 0) availableQuestions = questions;
   const question = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
   selectedQuestions.push(question);
-  if (!usedQuestions.includes(question)) usedQuestions.push(question);
-
+  // marquer comme utilisée et persister
+  if (!usedQuestions.includes(question)) {
+    usedQuestions.push(question);
+    saveUsedQuestions();
+  }
   currentPlayer = player;
   lastPlayer = player;
   lastQuestion = question;
   stats[player].received++;
-
   chooseCallerEntry();
   callerName.textContent = `Yo ${player}, ${currentCallerName} t'appelle !`;
   questionPrompt.textContent = "Répond à la question ou prend un shot :";
   questionText.textContent = question;
-
   menu.classList.remove("active");
   callScreen.classList.add("active");
-
   document.querySelectorAll('#menu input, #menu textarea, #menu button').forEach(el => el.style.display='none');
   document.querySelectorAll('#menu .button-row').forEach(el => el.style.display='flex');
-
   initSlider();
   playRingtone();
 }
-
 function answerQuestion(){
   stats[currentPlayer].answered++;
   stopRingtone();
   showAskJacksonScreen();
 }
-
 function takeShot(){
   stats[currentPlayer].shotsTaken++;
   stopRingtone();
   showAskJacksonScreen();
 }
-
 function showAskJacksonScreen(){
   questionScreen.classList.remove("active");
   askJacksonScreen.classList.add("active");
@@ -530,20 +583,21 @@ function showAskJacksonScreen(){
   const askHeader = document.getElementById('askHeader');
   askHeader.textContent = `Pose une question à ${currentCallerName}`;
 }
-
 function submitNewQuestion(){
   const newQuestion = document.getElementById("newQuestionInput").value.trim();
   if(newQuestion){
-    questions.push(newQuestion);
-    document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
+    // ajouter aux questions par défaut et persister
+    if (!questions.includes(newQuestion)) {
+      questions.push(newQuestion);
+      saveDefaultQuestions();
+      document.getElementById("questionsInput").value = JSON.stringify(questions, null, 2);
+    }
   }
   continueGame();
 }
-
 function skipNewQuestion(){
   continueGame();
 }
-
 function continueGame(){
   callScreen.classList.remove("active");
   questionScreen.classList.remove("active");
@@ -551,7 +605,6 @@ function continueGame(){
   stopRingtone();
   startGame();
 }
-
 function backToMenu(){
   stopRingtone();
   questionScreen.classList.remove("active");
@@ -562,7 +615,6 @@ function backToMenu(){
   document.querySelectorAll('#menu .button-row').forEach(el => el.style.display='flex');
   document.getElementById('phone').style.backgroundImage = `url('Zu1MKPS9.jpg')`;
 }
-
 function confirmEndGame(){
   if (confirm("Voulez-vous vraiment terminer la partie ?")) {
     if (questionScreen.classList.contains("active") && currentPlayer && stats[currentPlayer].received > 0) {
@@ -576,7 +628,6 @@ function confirmEndGame(){
     renderStats();
   }
 }
-
 function endGameToMenu(){
   statsScreen.classList.remove("active");
   menu.classList.add("active");
@@ -584,7 +635,6 @@ function endGameToMenu(){
   document.querySelectorAll('#menu .button-row').forEach(el => el.style.display='flex');
   document.getElementById('phone').style.backgroundImage = `url('Zu1MKPS9.jpg')`;
 }
-
 function renderStats(){
   const list = document.getElementById("statsList");
   list.innerHTML = players.map(p => {
@@ -593,81 +643,74 @@ function renderStats(){
     return `<div>👤 ${p}: ✅ Réponses: ${s.answered}, 🥃 Shots: ${s.shotsTaken}, 📈 Ratio: ${ratio}%</div>`;
   }).join("");
 }
-
-function downloadQuestions(){
+function downloadDefaultQuestions(){
   const data = JSON.stringify(questions, null, 2);
   const blob = new Blob([data], {type: 'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'questions.json';
+  a.download = 'questions-default.json';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-
 function initSlider(){
   const btn = document.getElementById("slideBtn");
   const slider = document.getElementById("slider");
   let isDragging=false, startX=0;
   btn.style.left="5px";
-
   const maxSlideDistance = slider.offsetWidth - btn.offsetWidth - 10;
-
   btn.onmousedown=e=>{ isDragging=true; startX=e.clientX; };
-  document.onmouseup=e=>{ 
-    if(isDragging){ 
-      isDragging=false; 
-      if(parseInt(btn.style.left) > maxSlideDistance * 0.9){ 
+  document.onmouseup=e=>{
+    if(isDragging){
+      isDragging=false;
+      if(parseInt(btn.style.left) > maxSlideDistance * 0.9){
         stopRingtone();
-        callScreen.classList.remove("active"); 
-        questionScreen.classList.add("active"); 
+        callScreen.classList.remove("active");
+        questionScreen.classList.add("active");
       } else {
-        btn.style.left="5px"; 
+        btn.style.left="5px";
       }
-    } 
+    }
   };
-  document.onmousemove=e=>{ 
-    if(isDragging){ 
-      let dx=e.clientX-startX; 
-      btn.style.left=Math.min(Math.max(5,5+dx),maxSlideDistance)+"px"; 
-    } 
+  document.onmousemove=e=>{
+    if(isDragging){
+      let dx=e.clientX-startX;
+      btn.style.left=Math.min(Math.max(5,5+dx),maxSlideDistance)+"px";
+    }
   };
-
-  btn.ontouchstart=e=>{ 
-    isDragging=true; 
-    startX=e.touches[0].clientX; 
+  btn.ontouchstart=e=>{
+    isDragging=true;
+    startX=e.touches[0].clientX;
     e.preventDefault();
   };
-  btn.ontouchend=e=>{ 
-    if(isDragging){ 
-      isDragging=false; 
-      if(parseInt(btn.style.left) > maxSlideDistance * 0.9){ 
+  btn.ontouchend=e=>{
+    if(isDragging){
+      isDragging=false;
+      if(parseInt(btn.style.left) > maxSlideDistance * 0.9){
         stopRingtone();
-        callScreen.classList.remove("active"); 
-        questionScreen.classList.add("active"); 
+        callScreen.classList.remove("active");
+        questionScreen.classList.add("active");
       } else {
-        btn.style.left="5px"; 
+        btn.style.left="5px";
       }
-    } 
+    }
   };
-  btn.ontouchmove=e=>{ 
-    if(isDragging){ 
-      let dx=e.touches[0].clientX-startX; 
-      btn.style.left=Math.min(Math.max(5,5+dx),maxSlideDistance)+"px"; 
-      e.preventDefault(); 
-    } 
+  btn.ontouchmove=e=>{
+    if(isDragging){
+      let dx=e.touches[0].clientX-startX;
+      btn.style.left=Math.min(Math.max(5,5+dx),maxSlideDistance)+"px";
+      e.preventDefault();
+    }
   };
 }
-
 function setVh() {
   let vh = window.innerHeight * 0.01;
   document.documentElement.style.setProperty('--vh', `${vh}px`);
 }
 window.addEventListener('resize', setVh);
 window.addEventListener('load', setVh);
-
 function isAppleDevice() {
   return /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
 }
@@ -676,21 +719,20 @@ window.addEventListener("load", () => {
     alert("⚠️ Sur iPhone/iPad, le mode plein écran doit être activé manuellement. Si la sonnerie ne se lance pas, tapez n'importe où sur l'écran.");
   }
 });
-
 // Ensure textarea is visible when keyboard appears
 document.getElementById("newQuestionInput").addEventListener("focus", function() {
   setTimeout(() => {
     this.scrollIntoView({ behavior: "smooth", block: "center" });
-    // Adjust the container to ensure buttons are visible
-    const askJacksonScreen = document.querySelector('.ask-jackson-screen');
-    askJacksonScreen.style.paddingBottom = '200px'; // Increase padding when focused
-  }, 300); // Delay to account for keyboard animation
+    const askJacksonScreen = document.querySelectorr('.ask-jackson-screen');
+    // fallback if querySelector fails above
+    try { document.querySelector('.ask-jackson-screen').style.paddingBottom = '200px'; } catch(e){}
+  }, 300);
 });
-
 document.getElementById("newQuestionInput").addEventListener("blur", function() {
   const askJacksonScreen = document.querySelector('.ask-jackson-screen');
-  askJacksonScreen.style.paddingBottom = '20px'; // Reset padding when focus is lost
+  askJacksonScreen.style.paddingBottom = '20px';
 });
 </script>
 </body>
 </html>
+
