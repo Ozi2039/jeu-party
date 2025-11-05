@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0d1117">
-<link rel="manifest" href="/manifest.json">
 <title>Vérité Party</title>
 <style>
   html, body {
@@ -72,8 +70,17 @@
     color:#000;
     flex: 1;
   }
-  button.small { flex: 0 0 auto; padding:8px 12px; }
-  .button-row { display: flex; justify-content: center; width: 100%; max-width: 280px; }
+  /* button small variant to avoid full flex for single centered buttons */
+  button.small {
+    flex: 0 0 auto;
+    padding:8px 12px;
+  }
+  .button-row {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 280px;
+  }
   input, textarea {
     padding:8px;
     margin:5px;
@@ -83,58 +90,88 @@
     background: rgba(255,255,255,0.8);
     color: #000;
   }
-  .players-list { margin:3px 0; max-height: 100px; overflow-y: auto; width: 100%; max-width: 280px; }
+  .players-list {
+    margin:3px 0;
+    max-height: 100px;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 280px;
+  }
   .call-box {text-align:center; width: 100%;}
   .caller {font-size:20px; margin-bottom:20px;}
-  .slide-container { position: relative; width: calc(100% - 20px); height: 60px; background: rgba(0,0,0,0.6); border-radius: 30px; overflow: hidden; margin: 0 10px; }
-  .slide-btn { position: absolute; top:5px; left:5px; width:50px; height:50px; background:#00ff88; border-radius:50%; cursor:grab; display:flex; align-items:center; justify-content:center; font-weight:bold; user-select: none; touch-action: none; }
-  .question { font-size:20px; max-width:280px; padding:20px; background: rgba(0,0,0,0.7); border-radius:12px; margin:20px; text-align:center; }
-  .question-prompt { font-size:16px; color:#ccc; margin-bottom:10px; text-align:center; }
+  .slide-container {
+    position: relative;
+    width: calc(100% - 20px);
+    height: 60px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 30px;
+    overflow: hidden;
+    margin: 0 10px;
+  }
+  .slide-btn {
+    position: absolute;
+    top:5px;
+    left:5px;
+    width:50px;
+    height:50px;
+    background:#00ff88;
+    border-radius:50%;
+    cursor:grab;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    user-select: none;
+    touch-action: none;
+  }
+  .question {
+    font-size:20px;
+    max-width:280px;
+    padding:20px;
+    background: rgba(0,0,0,0.7);
+    border-radius:12px;
+    margin:20px;
+    text-align:center;
+  }
+  .question-prompt {
+    font-size:16px;
+    color:#ccc;
+    margin-bottom:10px;
+    text-align:center;
+  }
   .slide-text {text-align:center; margin-top:10px; font-size:14px; color:#ccc;}
-  .ask-jackson-screen { text-align:center; width:100%; max-width:280px; display: flex; flex-direction: column; justify-content: center; min-height: 100%; padding: 20px; box-sizing: border-box; }
-  .ask-jackson-screen textarea { min-height:100px; resize:vertical; margin-bottom: 10px; }
+  .ask-jackson-screen {
+    text-align:center;
+    width:100%;
+    max-width:280px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  .ask-jackson-screen textarea {
+    min-height:100px;
+    resize:vertical;
+    margin-bottom: 10px;
+  }
   @media (max-width: 480px) {
-    .phone { width: 100vw; height: calc(var(--vh, 1vh) * 100); border-radius:0; box-shadow: none; }
+    .phone {
+      width: 100vw;
+      height: calc(var(--vh, 1vh) * 100);
+      border-radius:0;
+      box-shadow: none;
+    }
     .phone::before { border-radius:0; }
     .question { max-width: calc(100% - 40px); }
-    .slide-container { width: calc(100% - 20px); margin: 0 10px; }
-    .ask-jackson-screen { padding-bottom: 150px; }
-  }
-
-  /* BANNIERE SUGGESTION INSTALL PLAY-STORE (ANDROID) */
-  #androidInstallBanner {
-    position: fixed;
-    left: 12px;
-    right: 12px;
-    bottom: 18px;
-    background: rgba(0,0,0,0.85);
-    color: #fff;
-    border-radius: 12px;
-    padding: 12px;
-    display: none;
-    align-items: center;
-    gap: 10px;
-    z-index: 9999;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.6);
-    font-family: sans-serif;
-  }
-  #androidInstallBanner .text { flex: 1; font-size: 14px; }
-  #androidInstallBanner button {
-    background: #00d4ff;
-    color: #000;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-  #androidInstallBanner .close {
-    background: transparent;
-    color: #fff;
-    border: none;
-    font-size: 16px;
-    cursor: pointer;
-    padding: 4px;
+    .slide-container {
+      width: calc(100% - 20px);
+      margin: 0 10px;
+    }
+    .ask-jackson-screen {
+      padding-bottom: 150px; /* Extra padding to account for keyboard */
+    }
   }
 </style>
 </head>
@@ -159,6 +196,7 @@
       <button onclick="resetUsedQuestions()">🔁 Réinitialiser questions</button>
       <button onclick="downloadDefaultQuestions()">⬇️ Télécharger questions</button>
     </div>
+    <!-- Plein écran placé sous les boutons Réinitialiser / Télécharger -->
     <div class="button-row">
       <button onclick="toggleFullScreen()" id="fullscreenBtn" class="small">📱 Plein écran</button>
     </div>
@@ -203,95 +241,9 @@
     </div>
   </div>
 </div>
-
-<!-- Bannière Android personnalisée (propose Play Store) -->
-<div id="androidInstallBanner" role="dialog" aria-live="polite">
-  <div class="text">
-    Pour une meilleure expérience, installez l'application native.
-  </div>
-  <button id="androidInstallBtn">Télécharger l'app</button>
-  <button class="close" id="androidInstallClose" aria-label="Fermer">✕</button>
-</div>
-
 <script>
-/* ---------------- PWA: service worker registration + beforeinstallprompt handling ---------------- */
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/service-worker.js')
-    .then(reg => console.log('SW enregistré', reg))
-    .catch(err => console.warn('SW registration failed', err));
-}
-
-(function(){
-  const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.example.app'; // <-- remplace par ton URL
-  const banner = document.getElementById('androidInstallBanner');
-  const installBtn = document.getElementById('androidInstallBtn');
-  const closeBtn = document.getElementById('androidInstallClose');
-
-  function isAndroidBrowser() {
-    const ua = navigator.userAgent || '';
-    return /Android/i.test(ua) && !/Windows Phone/i.test(ua);
-  }
-  function isStandalone() {
-    return window.matchMedia && window.matchMedia('(display-mode: standalone)').matches
-      || window.navigator.standalone === true;
-  }
-  function showBanner() {
-    if (!isAndroidBrowser()) return;
-    if (isStandalone()) return;
-    // don't show if user dismissed previously
-    if (localStorage.getItem('vp_android_banner_dismissed') === '1') return;
-    banner.style.display = 'flex';
-  }
-  function hideBanner() {
-    banner.style.display = 'none';
-    try { localStorage.setItem('vp_android_banner_dismissed', '1'); } catch(e){ }
-  }
-
-  let deferredPrompt = null;
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    showBanner();
-  });
-
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      if (!deferredPrompt && !isStandalone() && isAndroidBrowser()) {
-        // show suggestion if PWA not detected but on Android
-        showBanner();
-      }
-    }, 900);
-  });
-
-  installBtn.addEventListener('click', async () => {
-    // si beforeinstallprompt dispo on peut déclencher le prompt natif
-    if (deferredPrompt) {
-      try {
-        deferredPrompt.prompt();
-        const choice = await deferredPrompt.userChoice;
-        deferredPrompt = null;
-        hideBanner();
-        return;
-      } catch(e) {
-        // fallback to Play Store redirect
-      }
-    }
-    try { window.location.href = PLAY_STORE_URL; }
-    catch(e) { window.open(PLAY_STORE_URL, '_blank'); }
-    hideBanner();
-  });
-
-  closeBtn.addEventListener('click', hideBanner);
-
-  window.matchMedia('(display-mode: standalone)').addEventListener('change', e => {
-    if (e.matches) hideBanner();
-  });
-})();
-
-/* ---------------- Reste du script original (inchangé, mais formaté) ---------------- */
-
 let players = [];
-let questions = [];
+let questions = []; // questions par défaut + ajoutées
 let usedQuestions = [];
 let stats = {};
 let currentPlayer = "";
@@ -369,6 +321,7 @@ async function tryUnlockAudio() {
       return true;
     } catch (err2) {
       console.error('tryUnlockAudio: fallback échoué', err2);
+      // Keep silent and let user tap to enable audio
       return false;
     }
   }
@@ -430,6 +383,8 @@ function saveUsedQuestions() {
   } catch (e) { console.warn('saveUsedQuestions failed', e); }
 }
 async function loadDefaultQuestions() {
+  // Priority: if localStorage has a non-empty array then use it.
+  // Otherwise try to fetch questions.json bundled with the app.
   try {
     const stored = localStorage.getItem(LOCAL_KEY_DEFAULT);
     if (stored) {
@@ -438,16 +393,20 @@ async function loadDefaultQuestions() {
         if (Array.isArray(parsedStored) && parsedStored.length > 0) {
           questions = parsedStored.slice();
         } else {
+          // treat empty array in localStorage as "no user-added questions"
+          // fall through to fetching bundled questions.json
           const resp = await fetch('questions.json').catch(() => null);
           if (resp && resp.ok) {
             const data = await resp.json();
             questions = Array.isArray(data) ? data : [];
+            // persist fetched defaults so next load uses them unless user replaces
             saveDefaultQuestions();
           } else {
             questions = [];
           }
         }
       } catch (e) {
+        // corrupted localStorage entry, fall back to bundled file
         const resp = await fetch('questions.json').catch(() => null);
         if (resp && resp.ok) {
           const data = await resp.json();
@@ -458,6 +417,7 @@ async function loadDefaultQuestions() {
         }
       }
     } else {
+      // no localStorage entry, try to fetch bundled questions.json
       try {
         const resp = await fetch('questions.json');
         if (resp.ok) {
@@ -475,10 +435,12 @@ async function loadDefaultQuestions() {
     console.warn('loadDefaultQuestions parse failed', e);
     questions = [];
   }
+  // load used questions
   try {
     const used = localStorage.getItem(LOCAL_KEY_USED);
     usedQuestions = used ? JSON.parse(used) : [];
     usedQuestions = Array.isArray(usedQuestions) ? usedQuestions : [];
+    // remove used entries that no longer exist
     usedQuestions = usedQuestions.filter(q => questions.includes(q));
     saveUsedQuestions();
   } catch (e) { usedQuestions = []; }
@@ -573,8 +535,10 @@ function startGame(){
   }
   const player = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
   selectedPlayers.push(player);
+  // build availableQuestions by excluding usedQuestions (persistées)
   let availableQuestions = questions.filter(q => !usedQuestions.includes(q) && q !== lastQuestion);
   if (availableQuestions.length === 0) {
+    // si toutes ont été utilisées, on remet à zéro usedQuestions puis recommence
     usedQuestions = [];
     saveUsedQuestions();
     availableQuestions = questions.filter(q => q !== lastQuestion);
@@ -582,6 +546,7 @@ function startGame(){
   if (availableQuestions.length === 0) availableQuestions = questions;
   const question = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
   selectedQuestions.push(question);
+  // marquer comme utilisée et persister
   if (!usedQuestions.includes(question)) {
     usedQuestions.push(question);
     saveUsedQuestions();
@@ -621,6 +586,7 @@ function showAskJacksonScreen(){
 function submitNewQuestion(){
   const newQuestion = document.getElementById("newQuestionInput").value.trim();
   if(newQuestion){
+    // ajouter aux questions par défaut et persister
     if (!questions.includes(newQuestion)) {
       questions.push(newQuestion);
       saveDefaultQuestions();
@@ -757,6 +723,7 @@ window.addEventListener("load", () => {
 document.getElementById("newQuestionInput").addEventListener("focus", function() {
   setTimeout(() => {
     this.scrollIntoView({ behavior: "smooth", block: "center" });
+    const askJacksonScreen = document.querySelectorr('.ask-jackson-screen');
     // fallback if querySelector fails above
     try { document.querySelector('.ask-jackson-screen').style.paddingBottom = '200px'; } catch(e){}
   }, 300);
